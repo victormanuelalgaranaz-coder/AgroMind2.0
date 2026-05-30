@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>AgroSantaCruz — Recomendaciones Agronómicas</title>
+<title>AgroMind 2.5 — Recomendaciones Agronómicas con Mapa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://maps.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0} 
 
 :root{
   --bg:#0A1A0F;
@@ -606,6 +607,78 @@ nav{
   margin-bottom:12px;
 }
 
+/* ═══════ MAPA DE ZONA DE CULTIVO ═══════ */
+.map-section{
+  position:relative;z-index:1;
+  max-width:1200px;margin:0 auto;
+  padding:0 32px 32px;
+}
+@media(max-width:768px){.map-section{padding:0 16px 24px}}
+.map-panel{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.map-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;
+  padding:16px 20px;
+  border-bottom:1px solid var(--border2);
+  flex-wrap:wrap;
+}
+.map-toolbar-info{display:flex;align-items:center;gap:12px}
+.map-pin-icon{font-size:24px}
+.map-zone-name{font-size:15px;font-weight:500;color:var(--text)}
+.map-zone-coords{font-size:12px;color:var(--text3);font-family:monospace;margin-top:2px}
+.map-locate-btn{
+  background:var(--green3);
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:var(--radius-sm);
+  padding:9px 16px;
+  font-size:13px;font-weight:500;
+  font-family:'DM Sans',sans-serif;
+  cursor:pointer;
+  display:flex;align-items:center;gap:6px;
+  transition:background .2s;
+  white-space:nowrap;
+}
+.map-locate-btn:hover{background:var(--green2);color:#0A1A0F}
+.map-hint{
+  font-size:12px;color:var(--text2);
+  padding:10px 20px;
+  background:rgba(46,204,113,0.04);
+  border-bottom:1px solid var(--border2);
+  line-height:1.5;
+}
+.map-canvas{
+  width:100%;
+  height:50vh;            /* media pantalla */
+  min-height:340px;
+  position:relative;
+  background:var(--bg3);
+}
+.map-loading{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;
+  color:var(--text2);font-size:14px;
+  text-align:center;padding:20px;
+  z-index:2;
+}
+.map-loading-sub{font-size:12px;color:var(--text3);max-width:280px}
+.map-loading-spinner{
+  width:36px;height:36px;
+  border:3px solid var(--border);
+  border-top-color:var(--green);
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Estilo de los controles de Google para que peguen con el tema oscuro */
+.gm-style .gm-style-iw{font-family:'DM Sans',sans-serif}
+
 /* ═══════ FOOTER ═══════ */
 footer{
   position:relative;z-index:1;
@@ -644,6 +717,9 @@ footer span{color:var(--green)}
   }
   .panel-body{padding:14px}
   .api-key-box{flex-wrap:nowrap}
+  .map-canvas{height:60vh;min-height:300px}
+  .map-toolbar{padding:14px 16px}
+  .map-locate-btn{padding:8px 12px;font-size:12px}
 }
 @media(max-width:480px){
   .pest-table{font-size:12px}
@@ -657,7 +733,7 @@ footer span{color:var(--green)}
 <nav>
   <div class="logo">
     <div class="logo-icon">🌿</div>
-    AgroSantaCruz
+    AgroMind <span style="font-size:13px;opacity:.7;font-weight:400">2.5</span>
   </div>
   <div class="nav-right">
     <div class="nav-badge">
@@ -698,6 +774,35 @@ footer span{color:var(--green)}
       <div>
         <div class="w-stat-label">Viento</div>
         <div class="w-stat-val gold" id="w-wind">-- km/h</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAPA DE ZONA DE CULTIVO (media pantalla) -->
+<div class="section-header">
+  <div class="section-label">Mapa de tu zona de cultivo</div>
+</div>
+<section class="map-section">
+  <div class="map-panel">
+    <div class="map-toolbar">
+      <div class="map-toolbar-info">
+        <span class="map-pin-icon">📍</span>
+        <div>
+          <div class="map-zone-name" id="map-zone-name">Detectando tu ubicación...</div>
+          <div class="map-zone-coords" id="map-zone-coords">--</div>
+        </div>
+      </div>
+      <button class="map-locate-btn" onclick="locateMe()">
+        <span>🎯</span> Mi ubicación
+      </button>
+    </div>
+    <div class="map-hint">Arrastrá el marcador o tocá el mapa para elegir exactamente tu zona de cultivo. El clima y el riesgo de plagas se recalculan para ese punto.</div>
+    <div id="map" class="map-canvas">
+      <div class="map-loading" id="map-loading">
+        <div class="map-loading-spinner"></div>
+        <div>Cargando mapa de Google...</div>
+        <div class="map-loading-sub" id="map-loading-sub">Si no carga, revisá tu API Key de Google Maps en el código.</div>
       </div>
     </div>
   </div>
@@ -783,8 +888,8 @@ footer span{color:var(--green)}
   <!-- CONTROL DE PLAGAS FULL WIDTH -->
   <div class="card card-full fade-in">
     <div class="card-header">
-      <div class="card-title"><div class="icon">🐛</div> Control de plagas — Riesgo actual</div>
-      <span style="font-size:11px;color:var(--text3)" id="pest-updated">Calculando con datos del clima...</span>
+      <div class="card-title"><div class="icon">🐛</div> Control de plagas — Riesgo en tu zona</div>
+      <span style="font-size:11px;color:var(--text3)" id="pest-updated">Calculando según tu ubicación...</span>
     </div>
     <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
       <div>
@@ -853,20 +958,34 @@ footer span{color:var(--green)}
 <!-- ═══════ FIN ASISTENTE FLOTANTE ═══════ -->
 
 <footer>
-  AgroMind · Datos en tiempo real de <span>Open-Meteo</span> · IA por <span>Groq</span> · Santa Cruz, Bolivia
+  AgroMind 2.5 · Clima y mapa por <span>Google Maps Platform</span> · IA por <span>Groq</span> · Santa Cruz, Bolivia
 </footer>
 
 <script>
 // ══════════════════════════════
 // CONFIG  (enfoque: Santa Cruz, Bolivia)
 // ══════════════════════════════
-let LAT  = -17.7863;          
+let LAT  = -17.7863;          // Santa Cruz de la Sierra (default)
 let LON  = -63.1812;
 let CITY = 'Santa Cruz de la Sierra';
 let usingUserLocation = false;
 
-const GROQ_API_KEY = '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';
-const GROQ_MODEL   = 'llama-3.3-70b-versatile';  
+// ┌─────────────────────────────────────────────────────────┐
+// │  🔑 PEGÁ AQUÍ TU API KEY DE GROQ  (console.groq.com/keys)  │
+// │  Reemplazá el texto entre comillas por tu key real.       │
+// │  Las keys de Groq empiezan con "gsk_..."                  │
+// └─────────────────────────────────────────────────────────┘
+const GROQ_API_KEY = 'gsk_PEGA-TU-API-KEY-AQUI';
+const GROQ_MODEL   = 'llama-3.3-70b-versatile';   // podés cambiarlo (ej: llama-3.1-8b-instant, gemma2-9b-it)
+
+// ┌─────────────────────────────────────────────────────────────────────┐
+// │  🗺️ PEGÁ AQUÍ TU API KEY DE GOOGLE  (console.cloud.google.com)        │
+// │  Necesitás habilitar 2 APIs en tu proyecto de Google Cloud:           │
+// │   1) "Maps JavaScript API"  (para el mapa)                            │
+// │   2) "Weather API"          (para el clima por ubicación)            │
+// │  Es la MISMA key para las dos. Las keys de Google empiezan con "AIza" │
+// └─────────────────────────────────────────────────────────────────────┘
+const GOOGLE_API_KEY = 'AIza_PEGA-TU-API-KEY-AQUI';
 
 const CHART_DEFAULTS = {
   color:'rgba(46,204,113,0.85)',
@@ -900,52 +1019,104 @@ const season = getSeason();
 document.getElementById('season-badge').textContent = season.label;
 
 // ══════════════════════════════
-// WEATHER API (Open-Meteo)
+// WEATHER API (Google Weather API)
 // ══════════════════════════════
 let weatherData = null;
 
 async function fetchWeather(){
   try{
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`
-      +`&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,wind_speed_10m,weather_code`
-      +`&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,relative_humidity_2m_max,weather_code`
-      +`&timezone=America%2FSanta_Isabel&forecast_days=7`;
+    if(!GOOGLE_API_KEY || GOOGLE_API_KEY.includes('PEGA-TU-API-KEY')){
+      document.getElementById('w-desc').textContent='⚠️ Falta API Key de Google';
+      console.warn('Configurá GOOGLE_API_KEY en el código.');
+      return;
+    }
 
-    const res  = await fetch(url);
-    const data = await res.json();
-    weatherData = data;
-    renderWeather(data);
-    renderCharts(data);
-    renderCrops(data);
-    renderRisks(data);
-    renderPests(data);
+    // Condiciones actuales + pronóstico diario (en sistema métrico)
+    const curUrl = `https://weather.googleapis.com/v1/currentConditions:lookup`
+      +`?key=${GOOGLE_API_KEY}&location.latitude=${LAT}&location.longitude=${LON}&unitsSystem=METRIC`;
+    const fcUrl  = `https://weather.googleapis.com/v1/forecast/days:lookup`
+      +`?key=${GOOGLE_API_KEY}&location.latitude=${LAT}&location.longitude=${LON}&days=7&unitsSystem=METRIC`;
+
+    const [curRes, fcRes] = await Promise.all([fetch(curUrl), fetch(fcUrl)]);
+    const cur = await curRes.json();
+    const fc  = await fcRes.json();
+
+    if(cur.error || fc.error){
+      const msg = (cur.error||fc.error).message || 'Error en la API de Google';
+      document.getElementById('w-desc').textContent='⚠️ '+msg;
+      console.error('Google Weather API:', cur.error||fc.error);
+      return;
+    }
+
+    // Normalizar al formato interno que usan las gráficas y el resto del código
+    weatherData = normalizeGoogleWeather(cur, fc);
+    renderWeather(weatherData);
+    renderCharts(weatherData);
+    renderCrops(weatherData);
+    renderRisks(weatherData);
+    renderPests(weatherData);
   }catch(e){
     document.getElementById('w-desc').textContent='Error cargando clima';
     console.error(e);
   }
 }
 
-function wmoDescription(code){
-  if(code===0)  return{desc:'Despejado',icon:'☀️'};
-  if(code<=2)   return{desc:'Parcialmente nublado',icon:'⛅'};
-  if(code<=3)   return{desc:'Nublado',icon:'☁️'};
-  if(code<=48)  return{desc:'Neblina',icon:'🌫️'};
-  if(code<=55)  return{desc:'Llovizna',icon:'🌦️'};
-  if(code<=65)  return{desc:'Lluvia moderada',icon:'🌧️'};
-  if(code<=75)  return{desc:'Nieve',icon:'❄️'};
-  if(code<=82)  return{desc:'Chubascos',icon:'🌨️'};
-  if(code<=99)  return{desc:'Tormenta eléctrica',icon:'⛈️'};
-  return{desc:'Cielo variable',icon:'🌤️'};
+// Convierte la respuesta de Google Weather al formato plano que ya usa la app
+function normalizeGoogleWeather(cur, fc){
+  const days = fc.forecastDays || [];
+  const sum = (a,b)=>(a||0)+(b||0);
+  return {
+    current:{
+      temperature_2m:       cur.temperature?.degrees ?? 0,
+      apparent_temperature: cur.feelsLikeTemperature?.degrees ?? cur.temperature?.degrees ?? 0,
+      relative_humidity_2m: cur.relativeHumidity ?? 0,
+      precipitation:        cur.precipitation?.qpf?.quantity ?? 0,
+      wind_speed_10m:       cur.wind?.speed?.value ?? 0,
+      weather_type:         cur.weatherCondition?.type ?? 'CLEAR',
+      weather_desc:         cur.weatherCondition?.description?.text ?? '',
+      time:                 cur.currentTime ?? new Date().toISOString(),
+    },
+    daily:{
+      time: days.map(d=>{
+        const dd=d.displayDate;
+        return `${dd.year}-${String(dd.month).padStart(2,'0')}-${String(dd.day).padStart(2,'0')}`;
+      }),
+      temperature_2m_max: days.map(d=>d.maxTemperature?.degrees ?? 0),
+      temperature_2m_min: days.map(d=>d.minTemperature?.degrees ?? 0),
+      precipitation_sum:  days.map(d=>sum(d.daytimeForecast?.precipitation?.qpf?.quantity,
+                                          d.nighttimeForecast?.precipitation?.qpf?.quantity)),
+      relative_humidity_2m_max: days.map(d=>Math.max(d.daytimeForecast?.relativeHumidity ?? 0,
+                                                     d.nighttimeForecast?.relativeHumidity ?? 0)),
+      weather_type: days.map(d=>d.daytimeForecast?.weatherCondition?.type ?? 'CLEAR'),
+    }
+  };
+}
+
+// Mapea los tipos de condición de Google a ícono + texto en español
+function googleCondition(type){
+  const t = (type||'').toUpperCase();
+  if(t==='CLEAR') return {desc:'Despejado',icon:'☀️'};
+  if(t.includes('MOSTLY_CLEAR')) return {desc:'Mayormente despejado',icon:'🌤️'};
+  if(t.includes('PARTLY')) return {desc:'Parcialmente nublado',icon:'⛅'};
+  if(t.includes('MOSTLY_CLOUDY')) return {desc:'Mayormente nublado',icon:'☁️'};
+  if(t.includes('CLOUDY')) return {desc:'Nublado',icon:'☁️'};
+  if(t.includes('FOG')||t.includes('HAZE')) return {desc:'Neblina',icon:'🌫️'};
+  if(t.includes('DRIZZLE')||t.includes('LIGHT_RAIN')) return {desc:'Llovizna',icon:'🌦️'};
+  if(t.includes('THUNDERSTORM')) return {desc:'Tormenta eléctrica',icon:'⛈️'};
+  if(t.includes('RAIN')||t.includes('SHOWER')) return {desc:'Lluvia',icon:'🌧️'};
+  if(t.includes('SNOW')) return {desc:'Nieve',icon:'❄️'};
+  if(t.includes('WIND')) return {desc:'Ventoso',icon:'💨'};
+  return {desc:'Cielo variable',icon:'🌤️'};
 }
 
 function renderWeather(data){
   const c   = data.current;
-  const wmo = wmoDescription(c.weather_code);
+  const cond= googleCondition(c.weather_type);
   const d   = new Date(c.time);
   const fmt = d.toLocaleDateString('es-BO',{weekday:'long',day:'numeric',month:'long'});
 
   document.getElementById('w-temp').innerHTML  = `${Math.round(c.temperature_2m)}<sup>°C</sup>`;
-  document.getElementById('w-desc').textContent = `${wmo.icon} ${wmo.desc}`;
+  document.getElementById('w-desc').textContent = `${cond.icon} ${c.weather_desc || cond.desc}`;
   document.getElementById('w-feels').textContent= `Sensación térmica: ${Math.round(c.apparent_temperature)}°C`;
   document.getElementById('w-date').textContent = fmt.charAt(0).toUpperCase()+fmt.slice(1);
   document.getElementById('w-humid').textContent= `${c.relative_humidity_2m}%`;
@@ -953,7 +1124,7 @@ function renderWeather(data){
   document.getElementById('w-wind').textContent = `${Math.round(c.wind_speed_10m)} km/h`;
   const locEl = document.querySelector('.weather-location');
   if(locEl) locEl.textContent = usingUserLocation
-    ? '📍 Tu ubicación actual · región Santa Cruz'
+    ? '📍 Tu zona seleccionada en el mapa'
     : '📍 Santa Cruz de la Sierra, Bolivia';
 }
 
@@ -1206,7 +1377,7 @@ function renderRisks(data){
 // ══════════════════════════════
 const SYSTEM_PROMPT = ()=>{
   const wInfo = weatherData? `
-Datos actuales del clima en Santa Cruz de la Sierra, Bolivia:
+Datos actuales de la ZONA SELECCIONADA por el agricultor en el mapa (lat ${LAT.toFixed(4)}, lon ${LON.toFixed(4)}${usingUserLocation?'':' — Santa Cruz por defecto'}):
 - Temperatura: ${Math.round(weatherData.current.temperature_2m)}°C (sensación: ${Math.round(weatherData.current.apparent_temperature)}°C)
 - Humedad relativa: ${weatherData.current.relative_humidity_2m}%
 - Precipitación: ${weatherData.current.precipitation} mm
@@ -1214,13 +1385,19 @@ Datos actuales del clima en Santa Cruz de la Sierra, Bolivia:
 - Temporada actual: ${season.name}
 - Cultivos recomendados esta temporada: ${season.crops.join(', ')}
 - Promedio de lluvia próximos 7 días: ${(weatherData.daily.precipitation_sum.reduce((a,b)=>a+b,0)/7).toFixed(1)} mm/día
+Tené en cuenta la ubicación geográfica y este clima para aconsejar sobre plagas y cultivos.
 ` : 'Los datos del clima están cargando.';
 
-  return `Eres un experto agrónomo especializado en la región de Santa Cruz de la Sierra, Bolivia. Ayudás a agricultores locales con recomendaciones prácticas sobre cultivos, plagas, riego, fertilización y manejo de temporadas. 
+  return `Actuás como un granjero profesional y experimentado de Santa Cruz de la Sierra, Bolivia, con muchos años trabajando la tierra. Hablás de forma cercana y práctica, como un agricultor que sabe del campo por experiencia propia, no como un manual técnico. Ayudás a otros agricultores con cultivos, plagas, riego, fertilización y manejo de temporadas.
 
 ${wInfo}
 
-Respondé en español, de forma clara y práctica. Sé concreto y da recomendaciones accionables. Si te preguntan sobre cultivos, considera siempre el clima actual. Sé amigable pero profesional. Máximo 3–4 párrafos por respuesta.`;
+REGLAS DE RESPUESTA:
+- Respondé SIEMPRE en español, breve y al grano. Máximo 3 o 4 frases por respuesta.
+- Nada de relleno ni explicaciones largas: solo el consejo práctico que sirve.
+- Usá lenguaje sencillo de campo, como hablaría un granjero con otro.
+- Si te preguntan sobre cultivos o plagas, tené en cuenta el clima actual de arriba.
+- Si hace falta más detalle, terminá ofreciendo ampliarlo, pero no lo expliques de una.`;
 };
 
 let chatHistory = [];
@@ -1248,7 +1425,7 @@ async function sendMsg(){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_API_KEY},
       body:JSON.stringify({
         model:GROQ_MODEL,
-        max_tokens:1000,
+        max_tokens:400,
         messages:[
           {role:'system',content:SYSTEM_PROMPT()},
           ...chatHistory.slice(-10)
@@ -1327,7 +1504,7 @@ function renderPests(data){
     .sort((a,b)=>b.score-a.score);
 
   document.getElementById('pest-updated').textContent =
-    `Basado en ${Math.round(temp)}°C y ${humid}% humedad`;
+    `Tu zona · ${Math.round(temp)}°C y ${humid}% humedad`;
 
   // ── CHART
   if(pestChart) pestChart.destroy();
@@ -1440,32 +1617,128 @@ setTimeout(showBubble, 4000);
 setInterval(showBubble, 16000);
 
 // ══════════════════════════════
-// UBICACIÓN  (pide acceso, default Santa Cruz)
+// GOOGLE MAPS — mapa de zona de cultivo
 // ══════════════════════════════
-function initLocation(){
-  if('geolocation' in navigator){
-    navigator.geolocation.getCurrentPosition(
-      pos=>{                                   // permiso concedido
-        LAT = pos.coords.latitude;
-        LON = pos.coords.longitude;
-        usingUserLocation = true;
-        fetchWeather();
-      },
-      err=>{                                   // permiso denegado / error → Santa Cruz
-        usingUserLocation = false;
-        fetchWeather();
-      },
-      {timeout:8000, maximumAge:600000}
-    );
-  } else {
-    fetchWeather();                            // navegador sin geolocalización
+let gmap = null, gmarker = null, ggeocoder = null, refreshTimer = null;
+
+// Carga el script de Google Maps de forma dinámica (porque la key está en JS)
+function loadGoogleMaps(){
+  if(!GOOGLE_API_KEY || GOOGLE_API_KEY.includes('PEGA-TU-API-KEY')){
+    document.getElementById('map-loading-sub').textContent =
+      '⚠️ Pegá tu API Key de Google Maps en el código (constante GOOGLE_API_KEY).';
+    return;
   }
+  const s = document.createElement('script');
+  s.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&callback=initMap&loading=async&v=weekly`;
+  s.async = true;
+  s.onerror = ()=>{
+    document.getElementById('map-loading-sub').textContent =
+      '⚠️ No se pudo cargar Google Maps. Revisá que la key sea válida y tenga "Maps JavaScript API" habilitada.';
+  };
+  document.head.appendChild(s);
+}
+
+// La llama Google automáticamente cuando el mapa está listo
+function initMap(){
+  ggeocoder = new google.maps.Geocoder();
+  const start = {lat:LAT, lng:LON};
+
+  gmap = new google.maps.Map(document.getElementById('map'),{
+    center:start,
+    zoom:13,
+    mapTypeId:'hybrid',          // satélite + etiquetas: ideal para ver parcelas
+    streetViewControl:false,
+    fullscreenControl:true,
+    mapTypeControl:true,
+    styles:[]                    // hybrid ya se ve bien
+  });
+
+  gmarker = new google.maps.Marker({
+    position:start,
+    map:gmap,
+    draggable:true,
+    title:'Tu zona de cultivo (arrastrame)',
+    animation:google.maps.Animation.DROP,
+  });
+
+  // Ocultar overlay de carga
+  const ml = document.getElementById('map-loading');
+  if(ml) ml.style.display='none';
+
+  // Al arrastrar el marcador → nueva zona
+  gmarker.addListener('dragend', ()=>{
+    const p = gmarker.getPosition();
+    setZone(p.lat(), p.lng(), true);
+  });
+
+  // Al tocar el mapa → mover marcador a esa zona
+  gmap.addListener('click', (e)=>{
+    gmarker.setPosition(e.latLng);
+    setZone(e.latLng.lat(), e.latLng.lng(), true);
+  });
+
+  // Pintar la zona inicial
+  setZone(LAT, LON, false);
+
+  // Intentar centrar en la ubicación real del usuario
+  locateMe(true);
+}
+
+// Actualiza coordenadas, nombre de zona, clima y plagas
+function setZone(lat, lon, recalcWeather){
+  LAT = lat; LON = lon;
+  document.getElementById('map-zone-coords').textContent =
+    `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+
+  // Nombre legible de la zona (geocodificación inversa)
+  if(ggeocoder){
+    ggeocoder.geocode({location:{lat,lng:lon}}, (results,status)=>{
+      if(status==='OK' && results[0]){
+        const comp = results[0].address_components;
+        const zona = (comp.find(c=>c.types.includes('locality'))
+                  || comp.find(c=>c.types.includes('administrative_area_level_2'))
+                  || comp.find(c=>c.types.includes('administrative_area_level_1')));
+        document.getElementById('map-zone-name').textContent =
+          zona ? zona.long_name : results[0].formatted_address.split(',')[0];
+      }else{
+        document.getElementById('map-zone-name').textContent='Zona seleccionada';
+      }
+    });
+  }
+
+  if(recalcWeather){
+    usingUserLocation = true;
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(fetchWeather, 400);   // debounce
+  }
+}
+
+// Centrar en la ubicación real del usuario
+function locateMe(silent){
+  if(!('geolocation' in navigator)){
+    if(!silent) alert('Tu navegador no soporta geolocalización.');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const lat=pos.coords.latitude, lon=pos.coords.longitude;
+      if(gmap && gmarker){
+        const p={lat,lng:lon};
+        gmap.panTo(p); gmap.setZoom(14);
+        gmarker.setPosition(p);
+      }
+      setZone(lat, lon, true);
+    },
+    err=>{ if(!silent) alert('No pudimos acceder a tu ubicación. Activá los permisos del navegador.'); },
+    {timeout:8000, maximumAge:300000, enableHighAccuracy:true}
+  );
 }
 
 // ══════════════════════════════
 // INIT
 // ══════════════════════════════
-initLocation();
+fetchWeather();      // clima inicial (Santa Cruz por defecto)
+loadGoogleMaps();    // carga el mapa; al estar listo refina la ubicación
 </script>
 </body>
 </html>
