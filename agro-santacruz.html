@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AgroSantaCruz — Recomendaciones Agronómicas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0A1A0F;
+  --bg2:#0F2317;
+  --bg3:#142D1A;
+  --card:#162B1C;
+  --card2:#1C3524;
+  --green:#2ECC71;
+  --green2:#27AE60;
+  --green3:#1A6B3A;
+  --gold:#F0C040;
+  --amber:#E8A020;
+  --sky:#5BC8F5;
+  --red:#E05A4A;
+  --text:#E8F5EC;
+  --text2:#9DC4A8;
+  --text3:#5A8A68;
+  --border:rgba(46,204,113,0.15);
+  --border2:rgba(46,204,113,0.08);
+  --radius:16px;
+  --radius-sm:10px;
+}
+
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ─── BACKGROUND TEXTURE ─── */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(46,204,113,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(27,110,58,0.1) 0%, transparent 50%);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ─── NAV ─── */
+nav{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 32px;
+  background:rgba(10,26,15,0.92);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+}
+.logo{
+  font-family:'Playfair Display',serif;
+  font-size:22px;font-weight:900;
+  color:var(--green);
+  letter-spacing:-0.5px;
+  display:flex;align-items:center;gap:10px;
+}
+.logo-icon{
+  width:32px;height:32px;
+  background:var(--green3);
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+}
+.nav-right{
+  display:flex;align-items:center;gap:8px;
+}
+.nav-badge{
+  background:var(--card2);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:6px 14px;
+  font-size:12px;font-weight:500;
+  color:var(--text2);
+  display:flex;align-items:center;gap:6px;
+}
+.dot-live{
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--green);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
+
+/* ─── HERO SECTION ─── */
+.hero{
+  position:relative;z-index:1;
+  padding:48px 32px 32px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:24px;
+  max-width:1200px;
+  margin:0 auto;
+}
+@media(max-width:768px){.hero{grid-template-columns:1fr;padding:24px 16px}}
+
+.hero-left h1{
+  font-family:'Playfair Display',serif;
+  font-size:52px;font-weight:900;
+  line-height:1.05;
+  color:var(--text);
+  margin-bottom:8px;
+}
+.hero-left h1 span{color:var(--green)}
+.hero-subtitle{
+  font-size:15px;color:var(--text2);
+  margin-bottom:28px;line-height:1.7;
+  max-width:380px;
+}
+.season-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(240,192,64,0.12);
+  border:1px solid rgba(240,192,64,0.3);
+  border-radius:20px;
+  padding:8px 16px;
+  font-size:13px;font-weight:500;
+  color:var(--gold);
+  margin-bottom:20px;
+}
+
+/* ─── WEATHER CARD (hero right) ─── */
+.weather-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:28px;
+  position:relative;
+  overflow:hidden;
+}
+.weather-card::before{
+  content:'';
+  position:absolute;top:-40px;right:-40px;
+  width:180px;height:180px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(91,200,245,0.12) 0%, transparent 70%);
+}
+.weather-location{
+  font-size:12px;font-weight:500;
+  color:var(--text3);letter-spacing:0.08em;
+  text-transform:uppercase;margin-bottom:12px;
+  display:flex;align-items:center;gap:6px;
+}
+.weather-main{
+  display:flex;align-items:flex-start;gap:16px;
+  margin-bottom:20px;
+}
+.weather-temp{
+  font-family:'Playfair Display',serif;
+  font-size:72px;font-weight:700;
+  line-height:1;color:var(--text);
+}
+.weather-temp sup{font-size:28px;color:var(--text2)}
+.weather-info{padding-top:8px;}
+.weather-desc{
+  font-size:16px;font-weight:500;
+  color:var(--sky);margin-bottom:6px;
+}
+.weather-feels{font-size:13px;color:var(--text2)}
+.weather-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  border-top:1px solid var(--border2);
+  padding-top:20px;
+}
+.w-stat-label{font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em}
+.w-stat-val{font-size:18px;font-weight:500;color:var(--text)}
+.w-stat-val.sky{color:var(--sky)}
+.w-stat-val.green{color:var(--green)}
+.w-stat-val.gold{color:var(--gold)}
+
+/* ─── FORECAST STRIP ─── */
+.forecast-strip{
+  position:relative;z-index:1;
+  max-width:1200px;margin:0 auto;
+  padding:0 32px 32px;
+}
+@media(max-width:768px){.forecast-strip{padding:0 16px 24px}}
+.forecast-title{
+  font-size:12px;font-weight:500;
+  color:var(--text3);letter-spacing:0.1em;
+  text-transform:uppercase;margin-bottom:14px;
+}
+.forecast-row{
+  display:grid;grid-template-columns:repeat(7,1fr);
+  gap:10px;
+}
+@media(max-width:768px){.forecast-row{grid-template-columns:repeat(4,1fr)}}
+.forecast-day{
+  background:var(--card);
+  border:1px solid var(--border2);
+  border-radius:var(--radius-sm);
+  padding:14px 10px;
+  text-align:center;
+  transition:border-color .2s,background .2s;
+  cursor:pointer;
+}
+.forecast-day:hover{border-color:var(--border);background:var(--card2)}
+.forecast-day.today{border-color:var(--green);background:rgba(46,204,113,0.07)}
+.fd-name{font-size:11px;color:var(--text3);margin-bottom:8px;font-weight:500}
+.fd-icon{font-size:22px;margin-bottom:8px;display:block}
+.fd-max{font-size:15px;font-weight:500;color:var(--text)}
+.fd-min{font-size:12px;color:var(--text3);margin-top:2px}
+.fd-rain{font-size:11px;color:var(--sky);margin-top:6px;display:flex;align-items:center;justify-content:center;gap:3px}
+
+/* ─── MAIN GRID ─── */
+.main-grid{
+  position:relative;z-index:1;
+  max-width:1200px;margin:0 auto;
+  padding:0 32px 48px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+}
+@media(max-width:768px){.main-grid{grid-template-columns:1fr;padding:0 16px 32px}}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.card-header{
+  padding:20px 24px 16px;
+  border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.card-title{
+  font-size:14px;font-weight:500;
+  color:var(--text);
+  display:flex;align-items:center;gap:8px;
+}
+.card-title .icon{
+  width:26px;height:26px;
+  background:var(--green3);
+  border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;
+}
+.card-body{padding:20px 24px}
+
+/* ─── CROPS TABLE ─── */
+.crops-list{display:flex;flex-direction:column;gap:10px}
+.crop-item{
+  display:flex;align-items:center;gap:14px;
+  padding:12px 16px;
+  background:var(--bg3);
+  border:1px solid var(--border2);
+  border-radius:var(--radius-sm);
+  transition:border-color .2s;
+  cursor:pointer;
+}
+.crop-item:hover{border-color:var(--border)}
+.crop-emoji{font-size:26px;width:40px;text-align:center;flex-shrink:0}
+.crop-info{flex:1}
+.crop-name{font-size:14px;font-weight:500;color:var(--text);margin-bottom:3px}
+.crop-detail{font-size:12px;color:var(--text2);line-height:1.5}
+.crop-score{
+  display:flex;flex-direction:column;align-items:flex-end;gap:4px;
+}
+.score-val{font-size:18px;font-weight:500}
+.score-val.high{color:var(--green)}
+.score-val.med{color:var(--gold)}
+.score-val.low{color:var(--amber)}
+.score-bar{
+  width:56px;height:4px;
+  background:rgba(255,255,255,0.08);
+  border-radius:2px;overflow:hidden;
+}
+.score-fill{height:4px;border-radius:2px;}
+
+/* ─── RISK CARD ─── */
+.risk-grid{display:flex;flex-direction:column;gap:10px}
+.risk-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;
+  border-radius:var(--radius-sm);
+  border:1px solid transparent;
+}
+.risk-item.low{background:rgba(46,204,113,0.07);border-color:rgba(46,204,113,0.15)}
+.risk-item.med{background:rgba(240,192,64,0.07);border-color:rgba(240,192,64,0.18)}
+.risk-item.high{background:rgba(224,90,74,0.07);border-color:rgba(224,90,74,0.2)}
+.risk-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.risk-item.low .risk-dot{background:var(--green)}
+.risk-item.med .risk-dot{background:var(--gold)}
+.risk-item.high .risk-dot{background:var(--red)}
+.risk-text{flex:1;font-size:13px;color:var(--text2);line-height:1.5}
+.risk-label{font-size:11px;font-weight:500;padding:3px 8px;border-radius:8px;white-space:nowrap}
+.risk-item.low .risk-label{background:rgba(46,204,113,0.15);color:var(--green)}
+.risk-item.med .risk-label{background:rgba(240,192,64,0.15);color:var(--gold)}
+.risk-item.high .risk-label{background:rgba(224,90,74,0.15);color:var(--red)}
+
+/* ─── CHARTS ─── */
+.chart-wrap{
+  position:relative;
+  height:220px;
+  padding:0;
+}
+.chart-wrap canvas{width:100%!important}
+
+/* ─── FULL-WIDTH CARD ─── */
+.card-full{
+  grid-column:1/-1;
+}
+
+/* ─── ASSISTANT ─── */
+.assistant-box{
+  background:var(--bg3);
+  border:1px solid var(--border2);
+  border-radius:var(--radius-sm);
+  padding:16px;
+  margin-top:4px;
+}
+.messages{
+  max-height:220px;
+  overflow-y:auto;
+  display:flex;flex-direction:column;
+  gap:10px;
+  margin-bottom:14px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--green3) transparent;
+}
+.msg{
+  padding:10px 14px;
+  border-radius:10px;
+  font-size:13px;line-height:1.6;
+  max-width:85%;
+}
+.msg.bot{
+  background:var(--card2);
+  color:var(--text2);
+  border-bottom-left-radius:2px;
+  align-self:flex-start;
+}
+.msg.user{
+  background:var(--green3);
+  color:var(--text);
+  border-bottom-right-radius:2px;
+  align-self:flex-end;
+}
+.msg.loading{
+  background:var(--card2);
+  color:var(--text3);
+  align-self:flex-start;
+  font-style:italic;
+}
+.input-row{
+  display:flex;gap:8px;
+}
+.chat-input{
+  flex:1;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px 14px;
+  font-size:13px;
+  font-family:'DM Sans',sans-serif;
+  color:var(--text);
+  outline:none;
+  transition:border-color .2s;
+}
+.chat-input::placeholder{color:var(--text3)}
+.chat-input:focus{border-color:var(--green)}
+.send-btn{
+  background:var(--green);
+  color:#0A1A0F;
+  border:none;
+  border-radius:8px;
+  padding:10px 18px;
+  font-size:13px;font-weight:500;
+  font-family:'DM Sans',sans-serif;
+  cursor:pointer;
+  transition:background .2s;
+  white-space:nowrap;
+}
+.send-btn:hover{background:var(--green2)}
+.send-btn:disabled{background:var(--green3);cursor:not-allowed}
+.quick-btns{
+  display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;
+}
+.quick-btn{
+  background:var(--card);
+  border:1px solid var(--border2);
+  border-radius:20px;
+  padding:5px 12px;
+  font-size:12px;color:var(--text2);
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:all .2s;
+}
+.quick-btn:hover{border-color:var(--green);color:var(--green)}
+
+/* ─── HUMIDITY GAUGE ─── */
+.gauge-wrap{
+  display:flex;align-items:center;justify-content:center;
+  padding:10px 0;
+}
+.gauge-svg{overflow:visible}
+
+/* ─── LOADING SKELETON ─── */
+.skeleton{
+  background:linear-gradient(90deg, var(--card2) 25%, var(--card) 50%, var(--card2) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.5s infinite;
+  border-radius:6px;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ─── SECTION HEADER ─── */
+.section-header{
+  position:relative;z-index:1;
+  max-width:1200px;margin:0 auto;
+  padding:8px 32px 16px;
+}
+@media(max-width:768px){.section-header{padding:8px 16px 12px}}
+.section-label{
+  font-size:11px;font-weight:500;
+  color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.1em;
+  border-left:3px solid var(--green);
+  padding-left:10px;
+}
+
+/* ─── FADE IN ─── */
+.fade-in{
+  opacity:0;transform:translateY(16px);
+  animation:fadeUp .5s ease forwards;
+}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+.fade-in:nth-child(1){animation-delay:.05s}
+.fade-in:nth-child(2){animation-delay:.1s}
+.fade-in:nth-child(3){animation-delay:.15s}
+.fade-in:nth-child(4){animation-delay:.2s}
+
+/* ─── FOOTER ─── */
+footer{
+  position:relative;z-index:1;
+  text-align:center;
+  padding:32px;
+  color:var(--text3);
+  font-size:12px;
+  border-top:1px solid var(--border2);
+}
+footer span{color:var(--green)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">
+    <div class="logo-icon">🌿</div>
+    AgroSantaCruz
+  </div>
+  <div class="nav-right">
+    <div class="nav-badge">
+      <span class="dot-live"></span>
+      Santa Cruz · Bolivia
+    </div>
+    <div class="nav-badge" id="nav-time">--:--</div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left fade-in">
+    <div class="season-badge" id="season-badge">🌦 Calculando temporada...</div>
+    <h1>Cultivá con<br/><span>inteligencia</span></h1>
+    <p class="hero-subtitle">Recomendaciones agronómicas en tiempo real para los campos de Santa Cruz, basadas en clima, humedad y datos satelitales.</p>
+  </div>
+
+  <div class="weather-card fade-in" id="weather-card">
+    <div class="weather-location">📍 Santa Cruz de la Sierra, Bolivia</div>
+    <div class="weather-main">
+      <div class="weather-temp" id="w-temp"><span class="skeleton" style="display:inline-block;width:100px;height:70px;border-radius:8px"></span></div>
+      <div class="weather-info">
+        <div class="weather-desc" id="w-desc">Cargando...</div>
+        <div class="weather-feels" id="w-feels">Sensación térmica: --°C</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--text3)" id="w-date">--</div>
+      </div>
+    </div>
+    <div class="weather-grid">
+      <div>
+        <div class="w-stat-label">Humedad</div>
+        <div class="w-stat-val sky" id="w-humid">--%</div>
+      </div>
+      <div>
+        <div class="w-stat-label">Lluvia</div>
+        <div class="w-stat-val green" id="w-rain">-- mm</div>
+      </div>
+      <div>
+        <div class="w-stat-label">Viento</div>
+        <div class="w-stat-val gold" id="w-wind">-- km/h</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FORECAST STRIP -->
+<section class="forecast-strip">
+  <div class="forecast-title">Pronóstico 7 días</div>
+  <div class="forecast-row" id="forecast-row">
+    <div class="forecast-day"><div class="skeleton" style="height:80px;border-radius:8px"></div></div>
+    <div class="forecast-day"><div class="skeleton" style="height:80px;border-radius:8px"></div></div>
+    <div class="forecast-day"><div class="skeleton" style="height:80px;border-radius:8px"></div></div>
+    <div class="forecast-day"><div class="skeleton" style="height:80px;border-radius:8px"></div></div>
+    <div class="forecast-day"><div class="skeleton" style="height:80px;border-radius:8px"></div></div>
+    <div class="forecast-day"><div class="skeleton" style="height:80px;border-radius:8px"></div></div>
+    <div class="forecast-day"><div class="skeleton" style="height:80px;border-radius:8px"></div></div>
+  </div>
+</section>
+
+<!-- SECTION LABEL -->
+<div class="section-header">
+  <div class="section-label">Análisis de cultivos · Temporada actual</div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="main-grid">
+
+  <!-- CULTIVOS RECOMENDADOS -->
+  <div class="card fade-in">
+    <div class="card-header">
+      <div class="card-title"><div class="icon">🌾</div> Cultivos recomendados</div>
+      <span style="font-size:11px;color:var(--text3)" id="crops-season">--</span>
+    </div>
+    <div class="card-body">
+      <div class="crops-list" id="crops-list">
+        <div class="skeleton" style="height:64px;border-radius:10px"></div>
+        <div class="skeleton" style="height:64px;border-radius:10px;margin-top:10px"></div>
+        <div class="skeleton" style="height:64px;border-radius:10px;margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIESGOS -->
+  <div class="card fade-in">
+    <div class="card-header">
+      <div class="card-title"><div class="icon">⚠️</div> Riesgos actuales</div>
+    </div>
+    <div class="card-body">
+      <div class="risk-grid" id="risk-grid">
+        <div class="skeleton" style="height:52px;border-radius:10px"></div>
+        <div class="skeleton" style="height:52px;border-radius:10px;margin-top:10px"></div>
+        <div class="skeleton" style="height:52px;border-radius:10px;margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRÁFICA TEMPERATURA 7 DÍAS -->
+  <div class="card fade-in">
+    <div class="card-header">
+      <div class="card-title"><div class="icon">🌡</div> Temperatura 7 días</div>
+    </div>
+    <div class="card-body" style="padding-bottom:16px">
+      <div class="chart-wrap"><canvas id="chartTemp"></canvas></div>
+    </div>
+  </div>
+
+  <!-- GRÁFICA LLUVIA 7 DÍAS -->
+  <div class="card fade-in">
+    <div class="card-header">
+      <div class="card-title"><div class="icon">🌧</div> Lluvia acumulada (mm)</div>
+    </div>
+    <div class="card-body" style="padding-bottom:16px">
+      <div class="chart-wrap"><canvas id="chartRain"></canvas></div>
+    </div>
+  </div>
+
+  <!-- GRÁFICA IDONEIDAD CULTIVOS (DONUT) -->
+  <div class="card fade-in">
+    <div class="card-header">
+      <div class="card-title"><div class="icon">📊</div> Idoneidad por cultivo</div>
+    </div>
+    <div class="card-body" style="padding-bottom:16px">
+      <div class="chart-wrap"><canvas id="chartCrops"></canvas></div>
+    </div>
+  </div>
+
+  <!-- HUMEDAD + VIENTO RADIALES -->
+  <div class="card fade-in">
+    <div class="card-header">
+      <div class="card-title"><div class="icon">💧</div> Humedad relativa 7 días</div>
+    </div>
+    <div class="card-body" style="padding-bottom:16px">
+      <div class="chart-wrap"><canvas id="chartHumid"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ASISTENTE IA FULL WIDTH -->
+  <div class="card card-full fade-in">
+    <div class="card-header">
+      <div class="card-title"><div class="icon">🤖</div> Asistente Agronómico IA</div>
+      <span style="font-size:11px;color:var(--text3)">Powered by Claude</span>
+    </div>
+    <div class="card-body">
+      <div class="assistant-box">
+        <div class="quick-btns">
+          <button class="quick-btn" onclick="quickAsk('¿Qué debo plantar esta semana en Santa Cruz?')">¿Qué plantar esta semana?</button>
+          <button class="quick-btn" onclick="quickAsk('¿Hay riesgo de heladas o sequía este mes?')">Riesgos del mes</button>
+          <button class="quick-btn" onclick="quickAsk('¿Cuándo es la mejor época para cosechar soya en Santa Cruz?')">Cosecha de soya</button>
+          <button class="quick-btn" onclick="quickAsk('¿Qué hacer si hay exceso de lluvia en mis cultivos?')">Exceso de lluvia</button>
+        </div>
+        <div class="messages" id="messages">
+          <div class="msg bot">👋 Hola, soy tu asistente agronómico. Estoy cargando los datos del clima de Santa Cruz para darte recomendaciones precisas. ¿En qué puedo ayudarte?</div>
+        </div>
+        <div class="input-row">
+          <input class="chat-input" id="chat-input" type="text" placeholder="Preguntá sobre cultivos, plagas, riego, temporadas..." onkeydown="if(event.key==='Enter')sendMsg()"/>
+          <button class="send-btn" id="send-btn" onclick="sendMsg()">Enviar →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  AgroSantaCruz · Datos en tiempo real de <span>Open-Meteo</span> · IA por <span>Anthropic Claude</span> · Santa Cruz, Bolivia
+</footer>
+
+<script>
+// ══════════════════════════════
+// CONFIG
+// ══════════════════════════════
+const LAT  = -17.7863;
+const LON  = -63.1812;
+const CITY = 'Santa Cruz de la Sierra';
+
+const CHART_DEFAULTS = {
+  color:'rgba(46,204,113,0.85)',
+  gridColor:'rgba(46,204,113,0.08)',
+  textColor:'#5A8A68',
+  font:"'DM Sans', sans-serif"
+};
+
+// ══════════════════════════════
+// TIME
+// ══════════════════════════════
+function updateTime(){
+  const now = new Date();
+  document.getElementById('nav-time').textContent =
+    now.toLocaleTimeString('es-BO',{hour:'2-digit',minute:'2-digit'});
+}
+updateTime(); setInterval(updateTime,10000);
+
+// ══════════════════════════════
+// SEASON
+// ══════════════════════════════
+function getSeason(){
+  const m = new Date().getMonth()+1;
+  if(m>=12||m<=2) return {name:'Verano lluvioso',label:'☀️🌧 Verano lluvioso (Dic–Feb)',crops:['soya','maíz','girasol','arroz','sorgo']};
+  if(m<=5)        return {name:'Otoño seco',label:'🍂 Otoño transición (Mar–May)',crops:['trigo','soya 2da','frijol','maní','algodón']};
+  if(m<=8)        return {name:'Invierno seco',label:'❄️ Invierno seco (Jun–Ago)',crops:['trigo','quinua','sorgo','girasol','frijol']};
+  return              {name:'Primavera',label:'🌱 Primavera (Sep–Nov)',crops:['soya','maíz','girasol','caña de azúcar','sorgo']};
+}
+
+const season = getSeason();
+document.getElementById('season-badge').textContent = season.label;
+
+// ══════════════════════════════
+// WEATHER API (Open-Meteo)
+// ══════════════════════════════
+let weatherData = null;
+
+async function fetchWeather(){
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`
+      +`&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,wind_speed_10m,weather_code`
+      +`&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,relative_humidity_2m_max,weather_code`
+      +`&timezone=America%2FSanta_Isabel&forecast_days=7`;
+
+    const res  = await fetch(url);
+    const data = await res.json();
+    weatherData = data;
+    renderWeather(data);
+    renderForecast(data);
+    renderCharts(data);
+    renderCrops(data);
+    renderRisks(data);
+  }catch(e){
+    document.getElementById('w-desc').textContent='Error cargando clima';
+    console.error(e);
+  }
+}
+
+function wmoDescription(code){
+  if(code===0)  return{desc:'Despejado',icon:'☀️'};
+  if(code<=2)   return{desc:'Parcialmente nublado',icon:'⛅'};
+  if(code<=3)   return{desc:'Nublado',icon:'☁️'};
+  if(code<=48)  return{desc:'Neblina',icon:'🌫️'};
+  if(code<=55)  return{desc:'Llovizna',icon:'🌦️'};
+  if(code<=65)  return{desc:'Lluvia moderada',icon:'🌧️'};
+  if(code<=75)  return{desc:'Nieve',icon:'❄️'};
+  if(code<=82)  return{desc:'Chubascos',icon:'🌨️'};
+  if(code<=99)  return{desc:'Tormenta eléctrica',icon:'⛈️'};
+  return{desc:'Cielo variable',icon:'🌤️'};
+}
+
+function renderWeather(data){
+  const c   = data.current;
+  const wmo = wmoDescription(c.weather_code);
+  const d   = new Date(c.time);
+  const fmt = d.toLocaleDateString('es-BO',{weekday:'long',day:'numeric',month:'long'});
+
+  document.getElementById('w-temp').innerHTML  = `${Math.round(c.temperature_2m)}<sup>°C</sup>`;
+  document.getElementById('w-desc').textContent = `${wmo.icon} ${wmo.desc}`;
+  document.getElementById('w-feels').textContent= `Sensación térmica: ${Math.round(c.apparent_temperature)}°C`;
+  document.getElementById('w-date').textContent = fmt.charAt(0).toUpperCase()+fmt.slice(1);
+  document.getElementById('w-humid').textContent= `${c.relative_humidity_2m}%`;
+  document.getElementById('w-rain').textContent = `${c.precipitation} mm`;
+  document.getElementById('w-wind').textContent = `${Math.round(c.wind_speed_10m)} km/h`;
+}
+
+const DAYS_ES=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+function renderForecast(data){
+  const d   = data.daily;
+  const row = document.getElementById('forecast-row');
+  row.innerHTML='';
+  d.time.forEach((t,i)=>{
+    const date= new Date(t);
+    const wmo = wmoDescription(d.weather_code[i]);
+    const el  = document.createElement('div');
+    el.className='forecast-day'+(i===0?' today':'');
+    el.innerHTML=`
+      <div class="fd-name">${i===0?'Hoy':DAYS_ES[date.getDay()]}</div>
+      <span class="fd-icon">${wmo.icon}</span>
+      <div class="fd-max">${Math.round(d.temperature_2m_max[i])}°</div>
+      <div class="fd-min">${Math.round(d.temperature_2m_min[i])}°</div>
+      <div class="fd-rain">💧 ${d.precipitation_sum[i]}mm</div>`;
+    row.appendChild(el);
+  });
+}
+
+// ══════════════════════════════
+// CHARTS
+// ══════════════════════════════
+Chart.defaults.color      = CHART_DEFAULTS.textColor;
+Chart.defaults.font.family= CHART_DEFAULTS.font;
+Chart.defaults.font.size  = 11;
+
+function renderCharts(data){
+  const d     = data.daily;
+  const labels= d.time.map((t,i)=>{
+    const date=new Date(t);
+    return i===0?'Hoy':DAYS_ES[date.getDay()];
+  });
+
+  // ── TEMPERATURA
+  new Chart(document.getElementById('chartTemp'),{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {
+          label:'Máx °C',
+          data:d.temperature_2m_max,
+          borderColor:'#E8A020',
+          backgroundColor:'rgba(232,160,32,0.12)',
+          borderWidth:2.5,
+          tension:.4,
+          fill:true,
+          pointBackgroundColor:'#E8A020',
+          pointRadius:4,
+          pointHoverRadius:6,
+        },{
+          label:'Mín °C',
+          data:d.temperature_2m_min,
+          borderColor:'#5BC8F5',
+          backgroundColor:'rgba(91,200,245,0.07)',
+          borderWidth:2,
+          tension:.4,
+          fill:true,
+          pointBackgroundColor:'#5BC8F5',
+          pointRadius:4,
+          pointHoverRadius:6,
+        }
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{color:'#9DC4A8',boxWidth:10,padding:14}},
+        tooltip:{backgroundColor:'#162B1C',borderColor:'rgba(46,204,113,0.3)',borderWidth:1,titleColor:'#E8F5EC',bodyColor:'#9DC4A8'}
+      },
+      scales:{
+        x:{grid:{color:CHART_DEFAULTS.gridColor},ticks:{color:CHART_DEFAULTS.textColor}},
+        y:{grid:{color:CHART_DEFAULTS.gridColor},ticks:{color:CHART_DEFAULTS.textColor,callback:v=>v+'°'}}
+      }
+    }
+  });
+
+  // ── LLUVIA
+  new Chart(document.getElementById('chartRain'),{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label:'Lluvia mm',
+        data:d.precipitation_sum,
+        backgroundColor:d.precipitation_sum.map(v=>
+          v>20?'rgba(91,200,245,0.9)':v>8?'rgba(91,200,245,0.6)':'rgba(91,200,245,0.35)'),
+        borderColor:'rgba(91,200,245,0.6)',
+        borderWidth:1,
+        borderRadius:6,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#162B1C',borderColor:'rgba(91,200,245,0.3)',borderWidth:1,titleColor:'#E8F5EC',bodyColor:'#9DC4A8'}
+      },
+      scales:{
+        x:{grid:{color:CHART_DEFAULTS.gridColor},ticks:{color:CHART_DEFAULTS.textColor}},
+        y:{grid:{color:CHART_DEFAULTS.gridColor},ticks:{color:CHART_DEFAULTS.textColor,callback:v=>v+' mm'},beginAtZero:true}
+      }
+    }
+  });
+
+  // ── HUMEDAD
+  new Chart(document.getElementById('chartHumid'),{
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'Humedad %',
+        data:d.relative_humidity_2m_max,
+        borderColor:'#2ECC71',
+        backgroundColor:'rgba(46,204,113,0.1)',
+        borderWidth:2.5,
+        tension:.4,fill:true,
+        pointBackgroundColor:'#2ECC71',
+        pointRadius:4,pointHoverRadius:6,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#162B1C',borderColor:'rgba(46,204,113,0.3)',borderWidth:1,titleColor:'#E8F5EC',bodyColor:'#9DC4A8'}
+      },
+      scales:{
+        x:{grid:{color:CHART_DEFAULTS.gridColor},ticks:{color:CHART_DEFAULTS.textColor}},
+        y:{grid:{color:CHART_DEFAULTS.gridColor},ticks:{color:CHART_DEFAULTS.textColor,callback:v=>v+'%'},min:30,max:100}
+      }
+    }
+  });
+}
+
+// ══════════════════════════════
+// CROPS RECOMMENDATION
+// ══════════════════════════════
+const ALL_CROPS = {
+  soya:       {emoji:'🌱',name:'Soya',detail:'Cultivo principal de Santa Cruz. Alta demanda internacional.',base:90},
+  maíz:       {emoji:'🌽',name:'Maíz',detail:'Requiere buena humedad. Múltiples usos en agroindustria.',base:85},
+  girasol:    {emoji:'🌻',name:'Girasol',detail:'Tolera sequía moderada. Ciclo corto de 90 días.',base:78},
+  arroz:      {emoji:'🌾',name:'Arroz',detail:'Ideal con lluvias altas. Valles de Santa Cruz.',base:72},
+  sorgo:      {emoji:'🌿',name:'Sorgo',detail:'Muy resistente a sequía. Buen forraje.',base:80},
+  trigo:      {emoji:'🌾',name:'Trigo',detail:'Invierno seco ideal. Importante para harina local.',base:88},
+  frijol:     {emoji:'🫘',name:'Frijol',detail:'Ciclo corto 60–90 días. Alta rotación posible.',base:75},
+  maní:       {emoji:'🥜',name:'Maní',detail:'Requiere suelo arenoso bien drenado.',base:70},
+  caña:       {emoji:'🎋',name:'Caña de azúcar',detail:'Zafra mayo–octubre. Zona Montero–Warnes.',base:82},
+  algodón:    {emoji:'☁️',name:'Algodón',detail:'Temporada larga 150 días. Buen precio exportación.',base:68},
+};
+
+function scoreForWeather(cropKey, data){
+  if(!data) return ALL_CROPS[cropKey].base;
+  const c   = data.current;
+  const avg = data.daily.precipitation_sum.reduce((a,b)=>a+b,0)/7;
+  let   sc  = ALL_CROPS[cropKey].base;
+  const temp= c.temperature_2m;
+  if(temp<10) sc-=20; else if(temp>35) sc-=10;
+  if(cropKey==='soya'||cropKey==='maíz')  { if(avg>3) sc+=5; if(c.relative_humidity_2m>70) sc+=3; }
+  if(cropKey==='sorgo'||cropKey==='girasol') { if(avg<3) sc+=5; }
+  if(cropKey==='trigo') { if(temp<20) sc+=8; if(avg<2) sc+=5; }
+  return Math.min(99,Math.max(30,Math.round(sc)));
+}
+
+function renderCrops(data){
+  const m    = new Date().getMonth()+1;
+  document.getElementById('crops-season').textContent = season.name;
+
+  const scored = season.crops.map(key=>({
+    key,
+    ...ALL_CROPS[key],
+    score: scoreForWeather(key,data)
+  })).sort((a,b)=>b.score-a.score);
+
+  document.getElementById('crops-list').innerHTML = scored.map(c=>{
+    const lvl = c.score>=80?'high':c.score>=65?'med':'low';
+    const col = c.score>=80?'#2ECC71':c.score>=65?'#F0C040':'#E8A020';
+    return `<div class="crop-item">
+      <div class="crop-emoji">${c.emoji}</div>
+      <div class="crop-info">
+        <div class="crop-name">${c.name}</div>
+        <div class="crop-detail">${c.detail}</div>
+      </div>
+      <div class="crop-score">
+        <div class="score-val ${lvl}">${c.score}%</div>
+        <div class="score-bar"><div class="score-fill" style="width:${c.score}%;background:${col}"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Donut chart idoneidad
+  new Chart(document.getElementById('chartCrops'),{
+    type:'doughnut',
+    data:{
+      labels:scored.map(c=>c.name),
+      datasets:[{
+        data:scored.map(c=>c.score),
+        backgroundColor:[
+          'rgba(46,204,113,0.85)',
+          'rgba(240,192,64,0.85)',
+          'rgba(91,200,245,0.85)',
+          'rgba(232,160,32,0.85)',
+          'rgba(46,204,113,0.45)',
+        ],
+        borderColor:'var(--bg)',
+        borderWidth:3,
+        hoverOffset:8,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{
+          position:'right',
+          labels:{color:'#9DC4A8',boxWidth:12,padding:10,font:{size:11}}
+        },
+        tooltip:{
+          backgroundColor:'#162B1C',
+          borderColor:'rgba(46,204,113,0.3)',
+          borderWidth:1,
+          titleColor:'#E8F5EC',
+          bodyColor:'#9DC4A8',
+          callbacks:{label:ctx=>`  Idoneidad: ${ctx.parsed}%`}
+        }
+      },
+      cutout:'65%',
+    }
+  });
+}
+
+// ══════════════════════════════
+// RISKS
+// ══════════════════════════════
+function renderRisks(data){
+  const risks=[];
+  if(!data){ document.getElementById('risk-grid').innerHTML='<p style="color:var(--text3);font-size:13px">Cargando análisis...</p>'; return; }
+  const c   = data.current;
+  const avg = data.daily.precipitation_sum.reduce((a,b)=>a+b,0)/7;
+  const max = Math.max(...data.daily.temperature_2m_max);
+
+  if(c.relative_humidity_2m>85) risks.push({lvl:'high',text:'Humedad muy alta ('+c.relative_humidity_2m+'%). Riesgo elevado de hongos y pudrición.',label:'Riesgo alto'});
+  else if(c.relative_humidity_2m>70) risks.push({lvl:'med',text:'Humedad moderada. Vigilar enfermedades fúngicas en soya y maíz.',label:'Precaución'});
+  else risks.push({lvl:'low',text:'Humedad óptima para la mayoría de cultivos esta semana.',label:'Sin riesgo'});
+
+  if(avg>15) risks.push({lvl:'high',text:'Lluvias intensas previstas ('+avg.toFixed(1)+' mm/día). Riesgo de encharcamiento.',label:'Riesgo alto'});
+  else if(avg>5) risks.push({lvl:'med',text:'Lluvias moderadas. Monitorear drenaje en campos planos.',label:'Precaución'});
+  else if(avg<1) risks.push({lvl:'med',text:'Déficit hídrico. Activar riego si hay cultivos en floración.',label:'Déficit agua'});
+  else risks.push({lvl:'low',text:'Precipitaciones normales para la temporada.',label:'Normal'});
+
+  if(max>36) risks.push({lvl:'high',text:'Temperaturas extremas ('+max+'°C). Estrés térmico en cultivos sensibles.',label:'Calor extremo'});
+  else if(max>32) risks.push({lvl:'med',text:'Calor moderado ('+max+'°C). Regar en horas frescas.',label:'Calor moderado'});
+  else risks.push({lvl:'low',text:'Temperatura favorable para el crecimiento de los cultivos de la temporada.',label:'Óptimo'});
+
+  document.getElementById('risk-grid').innerHTML = risks.map(r=>`
+    <div class="risk-item ${r.lvl}">
+      <div class="risk-dot"></div>
+      <div class="risk-text">${r.text}</div>
+      <div class="risk-label">${r.label}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════
+// ASISTENTE IA
+// ══════════════════════════════
+const SYSTEM_PROMPT = ()=>{
+  const wInfo = weatherData? `
+Datos actuales del clima en Santa Cruz de la Sierra, Bolivia:
+- Temperatura: ${Math.round(weatherData.current.temperature_2m)}°C (sensación: ${Math.round(weatherData.current.apparent_temperature)}°C)
+- Humedad relativa: ${weatherData.current.relative_humidity_2m}%
+- Precipitación: ${weatherData.current.precipitation} mm
+- Viento: ${Math.round(weatherData.current.wind_speed_10m)} km/h
+- Temporada actual: ${season.name}
+- Cultivos recomendados esta temporada: ${season.crops.join(', ')}
+- Promedio de lluvia próximos 7 días: ${(weatherData.daily.precipitation_sum.reduce((a,b)=>a+b,0)/7).toFixed(1)} mm/día
+` : 'Los datos del clima están cargando.';
+
+  return `Eres un experto agrónomo especializado en la región de Santa Cruz de la Sierra, Bolivia. Ayudás a agricultores locales con recomendaciones prácticas sobre cultivos, plagas, riego, fertilización y manejo de temporadas. 
+
+${wInfo}
+
+Respondé en español, de forma clara y práctica. Sé concreto y da recomendaciones accionables. Si te preguntan sobre cultivos, considera siempre el clima actual. Sé amigable pero profesional. Máximo 3–4 párrafos por respuesta.`;
+};
+
+let chatHistory = [];
+
+async function sendMsg(){
+  const input = document.getElementById('chat-input');
+  const msg   = input.value.trim();
+  if(!msg) return;
+  input.value='';
+  addMessage(msg,'user');
+  const loading = addMessage('Analizando datos del clima y consultando...','loading');
+  document.getElementById('send-btn').disabled=true;
+
+  chatHistory.push({role:'user',content:msg});
+
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:SYSTEM_PROMPT(),
+        messages:chatHistory.slice(-10),
+      })
+    });
+    const data = await res.json();
+    loading.remove();
+    const reply = data.content?.[0]?.text || 'Lo siento, no pude procesar tu consulta.';
+    chatHistory.push({role:'assistant',content:reply});
+    addMessage(reply,'bot');
+  }catch(e){
+    loading.remove();
+    addMessage('Error conectando al asistente. Verificá tu conexión.','bot');
+  }finally{
+    document.getElementById('send-btn').disabled=false;
+  }
+}
+
+function addMessage(text,type){
+  const msgs = document.getElementById('messages');
+  const el   = document.createElement('div');
+  el.className=`msg ${type}`;
+  el.textContent=text;
+  msgs.appendChild(el);
+  msgs.scrollTop=msgs.scrollHeight;
+  return el;
+}
+
+function quickAsk(q){
+  document.getElementById('chat-input').value=q;
+  sendMsg();
+}
+
+// ══════════════════════════════
+// INIT
+// ══════════════════════════════
+fetchWeather();
+</script>
+</body>
+</html>
