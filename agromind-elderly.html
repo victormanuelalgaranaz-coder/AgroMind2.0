@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AgroMind - Agronomía para Mayores</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style-elderly.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ═══════ NAVEGACIÓN ═══════ -->
+<nav class="navbar">
+  <div class="nav-content">
+    <div class="nav-logo">
+      <span class="logo-icon">🌾</span>
+      <span class="logo-text">AgroMind</span>
+    </div>
+    <div class="nav-user">
+      <span class="user-name" id="userName">Cargando...</span>
+      <button class="btn-logout" onclick="logoutUser()">Salir</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════ CONTENIDO PRINCIPAL ═══════ -->
+<main class="main-container">
+
+  <!-- ═══ SECCIÓN 1: CLIMA ACTUAL ═══ -->
+  <section class="section weather-section">
+    <h2 class="section-title">🌦️ Clima Hoy</h2>
+    <div class="weather-grid">
+      <div class="weather-box">
+        <div class="temp-display" id="tempDisplay">--°C</div>
+        <div class="temp-label">Temperatura</div>
+      </div>
+      <div class="weather-box">
+        <div class="weather-icon" id="weatherIcon">☁️</div>
+        <div class="weather-desc" id="weatherDesc">Cargando...</div>
+      </div>
+      <div class="weather-box">
+        <div class="temp-display" id="humidityDisplay">--%</div>
+        <div class="temp-label">Humedad</div>
+      </div>
+      <div class="weather-box">
+        <div class="temp-display" id="rainDisplay">-- mm</div>
+        <div class="temp-label">Lluvia</div>
+      </div>
+    </div>
+    <button class="btn-primary btn-large" onclick="refreshWeather()">Actualizar Clima</button>
+  </section>
+
+  <!-- ═══ SECCIÓN 2: MIS CULTIVOS ═══ -->
+  <section class="section crops-section">
+    <h2 class="section-title">🌱 Mis Cultivos</h2>
+    <div class="crops-container" id="cropsContainer">
+      <p style="text-align:center; color:#666;">Cargando cultivos...</p>
+    </div>
+    <button class="btn-primary btn-large" onclick="showAddCropForm()">+ Añadir Cultivo</button>
+  </section>
+
+  <!-- ═══ SECCIÓN 3: GRÁFICAS ═══ -->
+  <section class="section charts-section">
+    <h2 class="section-title">📊 Pronóstico 7 Días</h2>
+    <div class="charts-grid">
+      <div class="chart-box">
+        <h3>Temperatura</h3>
+        <canvas id="chartTemp"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Lluvia</h3>
+        <canvas id="chartRain"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SECCIÓN 4: ALERTAS DE PLAGAS ═══ -->
+  <section class="section alerts-section">
+    <h2 class="section-title">⚠️ Alertas de Plagas</h2>
+    <div class="alerts-container" id="alertsContainer">
+      <p style="text-align:center; color:#666;">Cargando alertas...</p>
+    </div>
+  </section>
+
+  <!-- ═══ SECCIÓN 5: RECOMENDACIONES ═══ -->
+  <section class="section recommendations-section">
+    <h2 class="section-title">💡 Recomendaciones</h2>
+    <div class="recommendations-container" id="recommendationsContainer">
+      <p style="text-align:center; color:#666;">Cargando recomendaciones...</p>
+    </div>
+  </section>
+
+  <!-- ═══ SECCIÓN 6: ASISTENTE IA ═══ -->
+  <section class="section assistant-section">
+    <h2 class="section-title">🤖 Asistente Agronómico</h2>
+    <div class="chat-container">
+      <div class="messages-box" id="messagesBox">
+        <div class="msg-bot">Hola, soy tu asistente agronomía. ¿Cómo puedo ayudarte hoy?</div>
+      </div>
+      <div class="input-area">
+        <input type="text" id="chatInput" placeholder="Escribe tu pregunta..." class="input-text">
+        <button class="btn-primary" onclick="sendChatMessage()">Enviar</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════ MODAL: AGREGAR CULTIVO ═══════ -->
+<div id="modalAddCrop" class="modal">
+  <div class="modal-content">
+    <h2>Agregar Nuevo Cultivo</h2>
+    <form id="cropForm">
+      <label>Tipo de cultivo:</label>
+      <select id="cropType" class="input-field">
+        <option value="">Seleccionar...</option>
+        <option value="soya">🌱 Soya</option>
+        <option value="maiz">🌽 Maíz</option>
+        <option value="girasol">🌻 Girasol</option>
+        <option value="arroz">🌾 Arroz</option>
+        <option value="trigo">🌾 Trigo</option>
+        <option value="frijol">🫘 Frijol</option>
+        <option value="algodón">☁️ Algodón</option>
+      </select>
+
+      <label>Área en hectáreas:</label>
+      <input type="number" id="cropArea" class="input-field" placeholder="Ej: 5" step="0.1" min="0">
+
+      <label>Fecha de siembra:</label>
+      <input type="date" id="cropDate" class="input-field">
+
+      <div class="modal-buttons">
+        <button type="submit" class="btn-primary btn-large">Guardar Cultivo</button>
+        <button type="button" class="btn-secondary btn-large" onclick="closeModal('modalAddCrop')">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════ SCRIPTS ═══════ -->
+<script src="supabase.js"></script>
+<script src="app-elderly.js"></script>
+
+</body>
+</html>
