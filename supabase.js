@@ -1,15 +1,12 @@
 // ═══════════════════════════════════════════════════════
 // AGROMIND - SUPABASE INTEGRATION
-// Gestión de datos y autenticación con Supabase
 // ═══════════════════════════════════════════════════════
 
-// CONFIGURACIÓN SUPABASE
-// ⚠️ EDITAR ESTOS VALORES CON TUS CREDENCIALES
-// Obtén de: Supabase Dashboard > Settings > API
-const SUPABASE_URL = 'https://hftxtpgjqjlxprkbcwjf.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_m8Yy7RYFx3KkjiFKIymZlg_bJaWQY1Z';
+const SUPABASE_URL = 'https://eoyzvqdtgbwzzxtjzpyv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_Oz1_ZPUIUG-43RaR0QCJ4A_uWiABD5v';
+// ⚠️ IMPORTANTE: La ANON KEY debe ser un JWT largo que empieza con "eyJ..."
+// Ve a: Supabase Dashboard > Settings > API > "anon public" key
 
-// Importar cliente Supabase (añade esto al HTML: <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>)
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -27,13 +24,16 @@ let pestAlerts = [];
 
 async function initAuth() {
   try {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (user) {
-      currentUser = user;
-      await loadUserProfile();
-      console.log('✅ Usuario autenticado:', user.email);
+    // Primero intentar recuperar sesión existente
+    const { data: { session } } = await supabaseClient.auth.getSession();
+
+    if (session && session.user) {
+      currentUser = session.user;
+      await ensureUserProfile(session.user);
+      console.log('✅ Usuario autenticado:', session.user.email);
+      initDashboard();
     } else {
-      console.log('No hay sesión. Redirigiendo a login...');
+      console.log('No hay sesión. Mostrando login...');
       showLoginPage();
     }
   } catch (error) {
@@ -49,36 +49,47 @@ async function loginUser(email, password) {
       password
     });
     if (error) throw error;
+
     currentUser = data.user;
-    await loadUserProfile();
-    return true;
+    await ensureUserProfile(data.user);
+    return { success: true };
   } catch (error) {
     console.error('Error login:', error.message);
-    return false;
+    return { success: false, message: error.message };
   }
 }
 
+// ✅ FIX: fullName typo corregido + metadata agregado + manejo de sesión mejorado
 async function signupUser(email, password, fullName) {
   try {
     const { data, error } = await supabaseClient.auth.signUp({
       email,
-      password
+      password,
+      options: {
+        data: {
+          full_name: fullName  // ✅ FIXED: era "full_Name" (typo)
+        }
+      }
     });
     if (error) throw error;
-    
-    currentUser = data.user;
-    
-    // Crear perfil en tabla users
-    await supabaseClient.from('users').insert([{
-      id: data.user.id,
-      email: email,
-      full_name: full_Name
-    }]);
-    
-    return true;
+
+    // ✅ FIX: Verificar si la sesión ya está activa (email confirmation desactivado)
+    // Si session existe, el usuario ya está logueado directamente
+    if (data.session) {
+      currentUser = data.user;
+      await ensureUserProfile(data.user, fullName);
+      return { success: true, needsConfirmation: false };
+    }
+
+    // Si no hay sesión, el usuario debe confirmar su email
+    if (data.user) {
+      return { success: true, needsConfirmation: true };
+    }
+
+    throw new Error('No se pudo crear el usuario');
   } catch (error) {
     console.error('Error signup:', error.message);
-    return false;
+    return { success: false, message: error.message };
   }
 }
 
@@ -96,6 +107,51 @@ async function logoutUser() {
 // PERFIL DE USUARIO
 // ═══════════════════════════════════════════════════════
 
+// ✅ NUEVO: Función que crea el perfil si no existe (evita errores en primer login)
+async function ensureUserProfile(user, fullName = null) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (error && error.code === 'PGRST116') {
+      // El perfil no existe, crearlo
+      const name = fullName
+        || user.user_metadata?.full_name
+        || user.email.split('@')[0];
+
+      const { error: insertError } = await supabaseClient
+        .from('users')
+        .insert([{
+          id: user.id,
+          email: user.email,
+          full_name: name,
+          location_name: 'Santa Cruz de la Sierra',
+          latitude: -17.7863,
+          longitude: -63.1812
+        }]);
+
+      if (insertError) {
+        console.error('Error creando perfil:', insertError.message);
+      } else {
+        console.log('✅ Perfil creado para:', user.email);
+      }
+    } else if (data) {
+      // Perfil existe, cargar ubicación
+      window.LAT = data.latitude || -17.7863;
+      window.LON = data.longitude || -63.1812;
+      window.CITY = data.location_name || 'Santa Cruz de la Sierra';
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error en ensureUserProfile:', error);
+    return null;
+  }
+}
+
 async function loadUserProfile() {
   try {
     const { data, error } = await supabaseClient
@@ -103,16 +159,15 @@ async function loadUserProfile() {
       .select('*')
       .eq('id', currentUser.id)
       .single();
-    
+
     if (error) throw error;
-    
-    // Guardar ubicación del usuario
+
     if (data) {
       window.LAT = data.latitude || -17.7863;
       window.LON = data.longitude || -63.1812;
       window.CITY = data.location_name || 'Santa Cruz de la Sierra';
     }
-    
+
     return data;
   } catch (error) {
     console.error('Error cargando perfil:', error);
@@ -127,7 +182,7 @@ async function updateUserProfile(updates) {
       .update(updates)
       .eq('id', currentUser.id)
       .select();
-    
+
     if (error) throw error;
     return data;
   } catch (error) {
@@ -153,7 +208,7 @@ async function addUserCrop(cropData) {
         status: 'activo'
       }])
       .select();
-    
+
     if (error) throw error;
     await loadUserCrops();
     return data;
@@ -170,7 +225,7 @@ async function loadUserCrops() {
       .select('*')
       .eq('user_id', currentUser.id)
       .eq('status', 'activo');
-    
+
     if (error) throw error;
     userCrops = data || [];
     return userCrops;
@@ -186,7 +241,7 @@ async function deleteUserCrop(cropId) {
       .from('user_crops')
       .update({ status: 'cosechado' })
       .eq('id', cropId);
-    
+
     if (error) throw error;
     await loadUserCrops();
     return true;
@@ -202,7 +257,10 @@ async function deleteUserCrop(cropId) {
 
 async function fetchAndSaveWeather() {
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${window.LAT}&longitude=${window.LON}`
+    const lat = window.LAT || -17.7863;
+    const lon = window.LON || -63.1812;
+
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
       + `&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,wind_speed_10m,weather_code`
       + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,relative_humidity_2m_max,weather_code`
       + `&timezone=America%2FSanta_Isabel&forecast_days=7`;
@@ -211,7 +269,6 @@ async function fetchAndSaveWeather() {
     const data = await res.json();
     currentWeatherData = data;
 
-    // Guardar en Supabase
     const { error } = await supabaseClient
       .from('weather_records')
       .insert([{
@@ -226,7 +283,7 @@ async function fetchAndSaveWeather() {
       }]);
 
     if (error) console.error('Error guardando clima:', error);
-    
+
     return data;
   } catch (error) {
     console.error('Error fetchAndSaveWeather:', error);
@@ -242,7 +299,7 @@ async function getWeatherHistory(days = 30) {
       .eq('user_id', currentUser.id)
       .gte('recorded_at', new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
       .order('recorded_at', { ascending: false });
-    
+
     if (error) throw error;
     return data || [];
   } catch (error) {
@@ -282,7 +339,7 @@ async function addPestAlert(pestData) {
         recommended_action: pestData.action
       }])
       .select();
-    
+
     if (error) throw error;
     await loadPestAlerts();
     return data;
@@ -300,7 +357,7 @@ async function loadPestAlerts() {
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(50);
-    
+
     if (error) throw error;
     pestAlerts = data || [];
     return pestAlerts;
@@ -327,7 +384,7 @@ async function addRecommendation(recData) {
         urgency: recData.urgency || 'normal'
       }])
       .select();
-    
+
     if (error) throw error;
     return data;
   } catch (error) {
@@ -344,7 +401,7 @@ async function getRecommendations() {
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(20);
-    
+
     if (error) throw error;
     return data || [];
   } catch (error) {
@@ -367,7 +424,7 @@ async function saveChatMessage(role, content) {
         content: content
       }])
       .select();
-    
+
     if (error) throw error;
     return data;
   } catch (error) {
@@ -384,7 +441,7 @@ async function getChatHistory(limit = 50) {
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: true })
       .limit(limit);
-    
+
     if (error) throw error;
     return data || [];
   } catch (error) {
@@ -410,7 +467,7 @@ async function addHarvestRecord(harvestData) {
         notes: harvestData.notes
       }])
       .select();
-    
+
     if (error) throw error;
     return data;
   } catch (error) {
@@ -426,7 +483,7 @@ async function getHarvestHistory() {
       .select('*')
       .eq('user_id', currentUser.id)
       .order('harvest_date', { ascending: false });
-    
+
     if (error) throw error;
     return data || [];
   } catch (error) {
@@ -436,7 +493,7 @@ async function getHarvestHistory() {
 }
 
 // ═══════════════════════════════════════════════════════
-// SUSCRIPCIONES EN TIEMPO REAL (WEBSOCKETS)
+// SUSCRIPCIONES EN TIEMPO REAL
 // ═══════════════════════════════════════════════════════
 
 function subscribeToWeatherUpdates(callback) {
@@ -445,9 +502,7 @@ function subscribeToWeatherUpdates(callback) {
     .on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'weather_records', filter: `user_id=eq.${currentUser.id}` },
-      (payload) => {
-        callback(payload.new);
-      }
+      (payload) => callback(payload.new)
     )
     .subscribe();
 }
@@ -458,15 +513,13 @@ function subscribeToPestAlerts(callback) {
     .on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'pest_alerts', filter: `user_id=eq.${currentUser.id}` },
-      (payload) => {
-        callback(payload.new);
-      }
+      (payload) => callback(payload.new)
     )
     .subscribe();
 }
 
 // ═══════════════════════════════════════════════════════
-// UI HELPERS
+// UI - LOGIN / REGISTRO
 // ═══════════════════════════════════════════════════════
 
 function showLoginPage() {
@@ -475,56 +528,105 @@ function showLoginPage() {
       <div class="login-box">
         <h1>🌾 AgroMind</h1>
         <p>Tu asistente agronomía digital</p>
+
         <form id="loginForm">
           <input type="email" id="email" placeholder="Correo electrónico" required>
-          <input type="password" id="password" placeholder="Contraseña" required>
-          <button type="submit">Entrar</button>
+          <input type="password" id="password" placeholder="Contraseña (mín. 6 caracteres)" required minlength="6">
+          <button type="submit" id="btnLogin">Entrar</button>
+          <p id="loginError" style="color:red; display:none; margin-top:8px;"></p>
         </form>
+
         <p style="text-align:center; margin-top:20px">
           ¿No tienes cuenta? <a href="#" onclick="toggleSignup()">Registrarse</a>
         </p>
+
         <form id="signupForm" style="display:none">
           <h3>Crear nueva cuenta</h3>
           <input type="text" id="fullname" placeholder="Tu nombre completo" required>
           <input type="email" id="signupEmail" placeholder="Correo electrónico" required>
-          <input type="password" id="signupPassword" placeholder="Contraseña" required>
-          <button type="submit">Registrarse</button>
-          <button type="button" onclick="toggleSignup()">Volver</button>
+          <input type="password" id="signupPassword" placeholder="Contraseña (mín. 6 caracteres)" required minlength="6">
+          <button type="submit" id="btnSignup">Registrarse</button>
+          <p id="signupError" style="color:red; display:none; margin-top:8px;"></p>
+          <button type="button" onclick="toggleSignup()" style="margin-top:8px;">Volver al login</button>
         </form>
       </div>
     </div>
   `;
 
+  // ── LOGIN ──
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('email').value;
+    const btn = document.getElementById('btnLogin');
+    const errEl = document.getElementById('loginError');
+    btn.textContent = 'Entrando...';
+    btn.disabled = true;
+    errEl.style.display = 'none';
+
+    const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
-    if (await loginUser(email, password)) {
+    const result = await loginUser(email, password);
+
+    if (result.success) {
       location.reload();
     } else {
-      alert('Error en login');
+      // Mostrar mensajes de error en español
+      errEl.textContent = translateError(result.message);
+      errEl.style.display = 'block';
+      btn.textContent = 'Entrar';
+      btn.disabled = false;
     }
   });
 
+  // ── REGISTRO ──
   document.getElementById('signupForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const fullName = document.getElementById('fullname').value;
-    const email = document.getElementById('signupEmail').value;
+    const btn = document.getElementById('btnSignup');
+    const errEl = document.getElementById('signupError');
+    btn.textContent = 'Registrando...';
+    btn.disabled = true;
+    errEl.style.display = 'none';
+
+    const fullName = document.getElementById('fullname').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
     const password = document.getElementById('signupPassword').value;
-    if (await signupUser(email, password, fullName)) {
-      alert('Registro exitoso. Inicia sesión.');
-      toggleSignup();
+
+    const result = await signupUser(email, password, fullName);
+
+    if (result.success) {
+      if (result.needsConfirmation) {
+        // Debe confirmar email
+        alert('✅ Registro exitoso. Revisa tu correo para confirmar tu cuenta y luego inicia sesión.');
+        toggleSignup();
+      } else {
+        // Sesión activa directamente (sin confirmación de email)
+        location.reload();
+      }
     } else {
-      alert('Error en registro');
+      errEl.textContent = translateError(result.message);
+      errEl.style.display = 'block';
+      btn.textContent = 'Registrarse';
+      btn.disabled = false;
     }
   });
 }
 
+// ✅ NUEVO: Traducir errores de Supabase al español
+function translateError(message) {
+  if (!message) return 'Error desconocido';
+  if (message.includes('Invalid login credentials')) return 'Correo o contraseña incorrectos.';
+  if (message.includes('Email not confirmed')) return 'Debes confirmar tu correo antes de iniciar sesión.';
+  if (message.includes('rate limit')) return 'Demasiados intentos. Espera unos minutos e intenta de nuevo.';
+  if (message.includes('already registered')) return 'Este correo ya tiene una cuenta. Intenta iniciar sesión.';
+  if (message.includes('invalid')) return 'Correo electrónico no válido.';
+  if (message.includes('Password should be')) return 'La contraseña debe tener al menos 6 caracteres.';
+  return message;
+}
+
 function toggleSignup() {
-  document.getElementById('loginForm').style.display = 
-    document.getElementById('loginForm').style.display === 'none' ? 'block' : 'none';
-  document.getElementById('signupForm').style.display = 
-    document.getElementById('signupForm').style.display === 'none' ? 'block' : 'none';
+  const login = document.getElementById('loginForm');
+  const signup = document.getElementById('signupForm');
+  login.style.display = login.style.display === 'none' ? 'block' : 'none';
+  signup.style.display = signup.style.display === 'none' ? 'block' : 'none';
 }
 
 // ═══════════════════════════════════════════════════════
