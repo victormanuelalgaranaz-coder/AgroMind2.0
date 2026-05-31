@@ -19,14 +19,21 @@
 <!-- ═══════ NAVBAR ═══════ -->
 <nav class="navbar" id="mainNav">
   <div class="nav-content">
-    <div class="nav-logo">
-      <span class="logo-icon">🌾</span>
-      <span class="logo-text">AgroMind</span>
+    <!-- Izquierda: badge usuario primero, luego logo -->
+    <div class="nav-left">
+      <!-- Nombre visible en escritorio, oculto en móvil -->
+      <div class="nav-user-badge nav-user-desktop" id="userBadge">
+        <span class="user-badge-avatar">👤</span>
+        <span class="user-badge-name" id="userName">Cargando...</span>
+      </div>
+      <div class="nav-logo">
+        <span class="logo-icon">🌾</span>
+        <span class="logo-text">AgroMind</span>
+      </div>
     </div>
-    <!-- En ESCRITORIO: nombre y salir visibles. En MÓVIL: ocultos, van en el menú hamburguesa -->
-    <div class="nav-user nav-user-desktop">
-      <span class="user-name" id="userName">Cargando...</span>
-      <button type="button" class="btn-logout" onclick="logoutUser()">Salir</button>
+    <!-- Derecha: botón salir (solo escritorio) -->
+    <div class="nav-user-desktop">
+      <button type="button" class="btn-logout" onclick="logoutUser()">🚪 Salir</button>
     </div>
   </div>
 </nav>
@@ -48,9 +55,11 @@
 
   <div class="menu-title">Secciones</div>
   <a href="#clima"          class="menu-item" onclick="scrollToSection('clima');          closeSideMenu();">🌦️ Clima</a>
-  <a href="#cultivos"       class="menu-item" onclick="scrollToSection('cultivos');       closeSideMenu();">🌱 Mis Cultivos</a>
+
   <a href="#pronostico"     class="menu-item" onclick="scrollToSection('pronostico');     closeSideMenu();">📊 Pronóstico</a>
-  <a href="#alertas"        class="menu-item" onclick="scrollToSection('alertas');        closeSideMenu();">⚠️ Alertas</a>
+
+  <a href="#alertas"        class="menu-item" onclick="scrollToSection('alertas');        closeSideMenu();">🐛 Alertas de Plagas</a>
+
   <a href="#recomendaciones"class="menu-item" onclick="scrollToSection('recomendaciones');closeSideMenu();">💡 Recomendaciones</a>
 
   <!-- Botón cerrar sesión — SOLO visible en móvil -->
@@ -114,14 +123,7 @@
     <button type="button" class="btn-primary btn-large" onclick="refreshWeather()">🔄 Actualizar Clima</button>
   </section>
 
-  <!-- 2: CULTIVOS -->
-  <section id="cultivos" class="section crops-section" aria-label="Mis cultivos">
-    <h2 class="section-title">🌱 Mis Cultivos</h2>
-    <div class="crops-container" id="cropsContainer">
-      <p class="loading-text">Cargando cultivos...</p>
-    </div>
-    <button type="button" class="btn-primary btn-large" onclick="showAddCropForm()">+ Añadir Cultivo</button>
-  </section>
+
 
   <!-- 3: PRONÓSTICO -->
   <section id="pronostico" class="section charts-section" aria-label="Pronóstico semanal">
@@ -138,9 +140,11 @@
     </div>
   </section>
 
-  <!-- 4: ALERTAS -->
+
+
+  <!-- 4: ALERTAS DE PLAGAS -->
   <section id="alertas" class="section alerts-section" aria-label="Alertas de plagas">
-    <h2 class="section-title">⚠️ Alertas de Plagas</h2>
+    <h2 class="section-title">🐛 Alertas de Plagas</h2>
     <div class="alerts-container" id="alertsContainer">
       <p class="loading-text">Cargando alertas...</p>
     </div>
@@ -203,17 +207,21 @@
     <div class="msg-bot">¡Hola! Soy tu asistente agrónomo. Pregúntame sobre tus cultivos, plagas, riego, o envíame una foto de tu planta para que la analice. 🌱📷</div>
   </div>
 
-  <!-- Chips de preguntas rápidas — scroll horizontal en móvil -->
-  <div class="assistant-quick">
-    <button type="button" class="quick-chip" onclick="quickAsk('¿Qué debo hacer hoy con mis cultivos según el clima?')">☀️ Consejo del día</button>
-    <button type="button" class="quick-chip" onclick="quickAsk('¿Cómo controlo las plagas en esta temporada?')">🐛 Plagas</button>
-    <button type="button" class="quick-chip" onclick="quickAsk('¿Cuándo y cómo debo regar mis cultivos?')">💧 Riego</button>
-    <button type="button" class="quick-chip" onclick="quickAsk('¿Qué fertilizante debo usar para mis cultivos?')">🌿 Fertilizantes</button>
-    <button type="button" class="quick-chip" onclick="quickAsk('¿Cuándo es el mejor momento para cosechar?')">🌾 Cosecha</button>
-    <button type="button" class="quick-chip" onclick="quickAsk('¿Cómo preparo el suelo para la próxima siembra?')">🪱 Preparar suelo</button>
-    <button type="button" class="quick-chip" onclick="quickAsk('¿Hay enfermedades fúngicas que deba prevenir con esta humedad?')">🍄 Hongos</button>
-    <button type="button" class="quick-chip" onclick="quickAsk('¿Qué semillas son mejores para esta época del año?')">🌱 Semillas</button>
-    <button type="button" class="quick-chip" onclick="quickAsk('¿Cómo protejo mis cultivos del calor extremo?')">🌡️ Calor extremo</button>
+  <!-- Chips de preguntas rápidas — scroll horizontal con flechas -->
+  <div class="assistant-quick-wrapper">
+    <button type="button" class="quick-nav-btn quick-nav-left" id="quickNavLeft" onclick="scrollQuickChips(-1)" aria-label="Anterior">&#8249;</button>
+    <div class="assistant-quick" id="assistantQuick">
+      <button type="button" class="quick-chip" onclick="quickAsk('¿Qué debo hacer hoy con mis cultivos según el clima?')">☀️ Consejo del día</button>
+      <button type="button" class="quick-chip" onclick="quickAsk('¿Cómo controlo las plagas en esta temporada?')">🐛 Plagas</button>
+      <button type="button" class="quick-chip" onclick="quickAsk('¿Cuándo y cómo debo regar mis cultivos?')">💧 Riego</button>
+      <button type="button" class="quick-chip" onclick="quickAsk('¿Qué fertilizante debo usar para mis cultivos?')">🌿 Fertilizantes</button>
+      <button type="button" class="quick-chip" onclick="quickAsk('¿Cuándo es el mejor momento para cosechar?')">🌾 Cosecha</button>
+      <button type="button" class="quick-chip" onclick="quickAsk('¿Cómo preparo el suelo para la próxima siembra?')">🪱 Preparar suelo</button>
+      <button type="button" class="quick-chip" onclick="quickAsk('¿Hay enfermedades fúngicas que deba prevenir con esta humedad?')">🍄 Hongos</button>
+      <button type="button" class="quick-chip" onclick="quickAsk('¿Qué semillas son mejores para esta época del año?')">🌱 Semillas</button>
+      <button type="button" class="quick-chip" onclick="quickAsk('¿Cómo protejo mis cultivos del calor extremo?')">🌡️ Calor extremo</button>
+    </div>
+    <button type="button" class="quick-nav-btn quick-nav-right" id="quickNavRight" onclick="scrollQuickChips(1)" aria-label="Siguiente">&#8250;</button>
   </div>
 
   <!-- Previsualización imagen adjunta -->
@@ -267,3 +275,4 @@
 <script src="elderly.js"></script>
 </body>
 </html>
+
