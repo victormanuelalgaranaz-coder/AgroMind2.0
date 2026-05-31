@@ -308,9 +308,10 @@
   </div>
 
   <div class="input-area">
-    <!-- Input oculto: en móvil abre cámara, en escritorio el explorador de archivos -->
-    <input type="file" id="imageInput" accept="image/*" capture="environment" style="display:none" onchange="handleImageSelected(event)"/>
-    <button type="button" class="btn-camera" onclick="document.getElementById('imageInput').click()" title="Adjuntar foto o imagen">📷</button>
+    <!-- Inputs ocultos: uno para galería y otro para cámara (más robusto en Android) -->
+    <input type="file" id="imageInputGallery" accept="image/*" style="display:none" onchange="handleImageSelected(event)"/>
+    <input type="file" id="imageInputCamera" accept="image/*" capture="environment" style="display:none" onchange="handleImageSelected(event)"/>
+    <button type="button" class="btn-camera" onclick="openImageOptions(event)" title="Adjuntar foto o imagen">📷</button>
     <input type="text" id="chatInput" placeholder="Escribe tu pregunta..." class="input-text"
       autocomplete="off" onkeydown="if(event.key==='Enter') sendChatMessage()" maxlength="500"/>
     <button type="button" class="btn-send" onclick="sendChatMessage()" aria-label="Enviar">➤</button>
@@ -401,6 +402,20 @@
         <button type="button" class="btn-primary btn-large" onclick="saveCrop()">💾 Guardar Cultivo</button>
         <button type="button" class="btn-secondary btn-large" onclick="closeModal('modalAddCrop')">Cancelar</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MODAL: ELEGIR CÁMARA O GALERÍA ═══════ -->
+<div id="imageChoiceModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="imageChoiceTitle"
+     onclick="if(event.target===this) closeModal('imageChoiceModal')">
+  <div class="modal-content">
+    <h2 id="imageChoiceTitle">Adjuntar imagen</h2>
+    <p>Elige cómo quieres adjuntar la imagen:</p>
+    <div class="modal-buttons">
+      <button type="button" class="btn-primary" onclick="handleImageOption('camera')">📷 Cámara</button>
+      <button type="button" class="btn-secondary" onclick="handleImageOption('gallery')">🖼️ Galería</button>
+      <button type="button" class="btn-small" onclick="closeModal('imageChoiceModal')">Cancelar</button>
     </div>
   </div>
 </div>
