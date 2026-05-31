@@ -32,6 +32,7 @@ async function initDashboard() {
     }
 
     initMap(window.LAT, window.LON);
+    initPresence();
 
     await Promise.all([
       refreshWeather(),
@@ -358,6 +359,32 @@ function renderCharts(daily) {
 // CULTIVOS
 // ═══════════════════════════════════════════════════════
 
+// Mapa completo de emojis para todos los cultivos
+const CROP_EMOJI_MAP = {
+  soya:'🌱', maiz:'🌽', girasol:'🌻', arroz:'🍚', trigo:'🌾',
+  frijol:'🫘', 'algodón':'🌨️', quinua:'⭐', cañahua:'🌾',
+  amaranto:'🌸', cebada:'🌾', sorgo:'🌾', mani:'🥜',
+  garbanzo:'🫘', arveja:'🟢', haba:'🫘', papa:'🥔',
+  yuca:'🟡', camote:'🍠', oca:'🟠', remolacha:'🟣',
+  zanahoria:'🥕', tomate:'🍅', cebolla:'🧅', ajo:'🧄',
+  pepino:'🥒', zapallo:'🎃', lechuga:'🥬', espinaca:'🥬',
+  locoto:'🌶️', repollo:'🥦', brocoli:'🥦', platano:'🍌',
+  mango:'🥭', naranja:'🍊', limon:'🍋', palta:'🥑',
+  cacao:'🍫', cafe:'☕', 'piña':'🍍', maracuya:'🟡',
+  'caña':'🎋'
+};
+
+// Días aproximados hasta cosecha por cultivo
+const CROP_DAYS_TO_HARVEST = {
+  maiz:120, soya:110, arroz:130, trigo:120, girasol:100,
+  frijol:75, mani:120, garbanzo:90, arveja:70, haba:80,
+  papa:100, yuca:240, camote:100, oca:200, zanahoria:80,
+  tomate:90, cebolla:120, ajo:150, pepino:60, zapallo:90,
+  lechuga:45, espinaca:45, repollo:80, brocoli:75, locoto:90,
+  platano:270, naranja:365, limon:365, mango:150, palta:180,
+  cacao:365, cafe:365, 'caña':365, quinua:150, amaranto:120
+};
+
 async function renderCrops() {
   const container = document.getElementById('cropsContainer');
   if (!container) return;
@@ -365,50 +392,122 @@ async function renderCrops() {
 
   const crops = await loadUserCrops();
   if (!crops.length) {
-    container.innerHTML = `<div class="empty-state"><span style="font-size:3rem">🌱</span><p>No tienes cultivos registrados aún.</p><p>Pulsa <strong>+ Añadir Cultivo</strong> para empezar.</p></div>`;
+    container.innerHTML = `
+      <div class="empty-state">
+        <span style="font-size:3rem">🌱</span>
+        <p>No tienes cultivos registrados aún.</p>
+        <p>Pulsa <strong>+ Añadir Cultivo</strong> para empezar.</p>
+      </div>`;
     return;
   }
 
-  container.innerHTML = crops.map(crop => `
-    <div class="crop-card">
+  container.innerHTML = crops.map(crop => {
+    const emoji = crop.crop_emoji || CROP_EMOJI_MAP[crop.crop_name] || '🌱';
+    const daysMap = CROP_DAYS_TO_HARVEST[crop.crop_name];
+    let harvestTag = '';
+    if (daysMap && crop.planting_date) {
+      const planted   = new Date(crop.planting_date + 'T00:00:00');
+      const harvestDt = new Date(planted.getTime() + daysMap * 86400000);
+      const today     = new Date();
+      const daysLeft  = Math.round((harvestDt - today) / 86400000);
+      if (daysLeft > 0) {
+        harvestTag = `<div class="crop-detail crop-harvest">🗓️ Cosecha aprox.: ${formatDate(harvestDt.toISOString().split('T')[0])} <span class="days-badge">${daysLeft} días</span></div>`;
+      } else {
+        harvestTag = `<div class="crop-detail crop-harvest ready">✅ ¡Listo para cosechar!</div>`;
+      }
+    }
+    const detailsBlock = crop.details
+      ? `<div class="crop-notes">📝 ${crop.details}</div>`
+      : '';
+    const varietyBlock = crop.variety
+      ? `<div class="crop-detail">🔖 ${crop.variety}</div>`
+      : '';
+
+    return `
+    <div class="crop-card" id="cropcard-${crop.id}">
       <div class="crop-header">
-        <span class="crop-emoji">${crop.crop_emoji || '🌱'}</span>
+        <span class="crop-emoji">${emoji}</span>
         <span class="crop-name">${capitalize(crop.crop_name)}</span>
       </div>
+      ${varietyBlock}
       <div class="crop-detail">📐 ${crop.area_hectares ?? '--'} hectáreas</div>
       <div class="crop-detail">📅 Siembra: ${formatDate(crop.planting_date)}</div>
-      <button type="button" class="btn-secondary btn-small" onclick="confirmDeleteCrop('${crop.id}', '${crop.crop_name}')">Marcar cosechado</button>
-    </div>`).join('');
+      ${harvestTag}
+      ${detailsBlock}
+      <div class="crop-actions">
+        <button type="button" class="btn-edit btn-small" onclick="editCrop('${crop.id}')">✏️ Editar</button>
+        <button type="button" class="btn-secondary btn-small" onclick="confirmDeleteCrop('${crop.id}', '${crop.crop_name}')">✔️ Cosechado</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function showAddCropForm() {
-  document.getElementById('cropType').value = '';
-  document.getElementById('cropArea').value = '';
-  document.getElementById('cropDate').value = '';
+  // Modo agregar: limpiar todo
+  document.getElementById('cropEditId').value = '';
+  document.getElementById('modalCropTitle').textContent = '🌱 Agregar Nuevo Cultivo';
+  document.getElementById('cropType').value    = '';
+  document.getElementById('cropArea').value    = '';
+  document.getElementById('cropDate').value    = '';
+  document.getElementById('cropVariety').value = '';
+  document.getElementById('cropDetails').value = '';
   const errEl = document.getElementById('cropFormError');
-  if (errEl) errEl.style.display = 'none';
+  if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
+  openModal('modalAddCrop');
+}
+
+async function editCrop(cropId) {
+  // Buscar el cultivo en el array global
+  const crop = userCrops.find(c => c.id == cropId);
+  if (!crop) return;
+
+  document.getElementById('cropEditId').value   = cropId;
+  document.getElementById('modalCropTitle').textContent = '✏️ Editar Cultivo';
+  document.getElementById('cropType').value     = crop.crop_name || '';
+  document.getElementById('cropArea').value     = crop.area_hectares || '';
+  document.getElementById('cropDate').value     = crop.planting_date || '';
+  document.getElementById('cropVariety').value  = crop.variety || '';
+  document.getElementById('cropDetails').value  = crop.details || '';
+  const errEl = document.getElementById('cropFormError');
+  if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
   openModal('modalAddCrop');
 }
 
 async function saveCrop() {
-  const errEl = document.getElementById('cropFormError');
-  const type  = document.getElementById('cropType').value;
-  const area  = parseFloat(document.getElementById('cropArea').value);
-  const date  = document.getElementById('cropDate').value;
+  const errEl   = document.getElementById('cropFormError');
+  const editId  = document.getElementById('cropEditId').value;
+  const type    = document.getElementById('cropType').value;
+  const area    = parseFloat(document.getElementById('cropArea').value);
+  const date    = document.getElementById('cropDate').value;
+  const variety = document.getElementById('cropVariety').value.trim();
+  const details = document.getElementById('cropDetails').value.trim();
 
-  if (!type)         { showFormError(errEl, 'Selecciona un tipo de cultivo.');       return; }
-  if (!area || area<=0){ showFormError(errEl, 'Ingresa un área válida mayor a 0.');  return; }
-  if (!date)         { showFormError(errEl, 'Selecciona una fecha de siembra.');      return; }
+  if (!type)            { showFormError(errEl, 'Selecciona un tipo de cultivo.');      return; }
+  if (!area || area<=0) { showFormError(errEl, 'Ingresa un área válida mayor a 0.');   return; }
+  if (!date)            { showFormError(errEl, 'Selecciona una fecha de siembra.');     return; }
 
-  const emojiMap = { soya:'🌱', maiz:'🌽', girasol:'🌻', arroz:'🌾', trigo:'🌾', frijol:'🫘', 'algodón':'☁️' };
-  const result = await addUserCrop({ name: type, emoji: emojiMap[type] || '🌱', area, plantingDate: date });
+  const emoji = CROP_EMOJI_MAP[type] || '🌱';
 
-  if (result) {
-    closeModal('modalAddCrop');
-    await renderCrops();
-    await generateRecommendationsForCrop(type);
+  if (editId) {
+    // EDITAR cultivo existente
+    const result = await updateUserCrop(editId, { name: type, emoji, area, plantingDate: date, variety, details });
+    if (result) {
+      closeModal('modalAddCrop');
+      await renderCrops();
+      loadCropMarkersOnMap();
+    } else {
+      showFormError(errEl, 'Error al actualizar. Intenta de nuevo.');
+    }
   } else {
-    showFormError(errEl, 'Error al guardar. Intenta de nuevo.');
+    // AGREGAR nuevo cultivo
+    const result = await addUserCrop({ name: type, emoji, area, plantingDate: date, variety, details });
+    if (result) {
+      closeModal('modalAddCrop');
+      await renderCrops();
+      await generateRecommendationsForCrop(type);
+    } else {
+      showFormError(errEl, 'Error al guardar. Intenta de nuevo.');
+    }
   }
 }
 
