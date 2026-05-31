@@ -84,7 +84,7 @@ function scrollToSection(id) {
   const navbarHeight = navbar ? navbar.offsetHeight : 80;
 
   const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-  const offsetPosition = elementPosition - navbarHeight - 20; // 20px de margen adicional para una vista aireada y limpia
+  const offsetPosition = elementPosition - navbarHeight - 20; 
 
   window.scrollTo({
     top: offsetPosition,
@@ -97,7 +97,7 @@ function scrollToSection(id) {
 // ═══════════════════════════════════════════════════════
 
 const AI_TIPS = [
-  null, // placeholder para tip climático dinámico
+  null, 
   '🌱 Registra tus cultivos para recibir alertas y recomendaciones personalizadas.',
   '📷 ¿Ves algo raro en tus plantas? Toma una foto y mándala al asistente para analizarla.',
   '🪱 La salud del suelo es la base de una buena cosecha. Rota tus cultivos cada temporada.',
@@ -118,7 +118,6 @@ function showAiRecommendation() {
   const msgEl  = document.getElementById('recommendationMessage');
   if (!banner || !msgEl) return;
 
-  // Generar tip climático dinámico
   const city = window.CITY || 'tu zona';
   if (currentWeatherData && currentWeatherData.current) {
     const rain  = currentWeatherData.current.precipitation          || 0;
@@ -144,7 +143,6 @@ function showAiRecommendation() {
   setTimeout(() => { try { banner.style.display = 'none'; } catch(e){} }, 14000);
 }
 
-// Rotar un nuevo tip cada 45 segundos
 setInterval(() => {
   const banner = document.getElementById('aiRecommendationBanner');
   const msgEl  = document.getElementById('recommendationMessage');
@@ -274,7 +272,7 @@ function getWeatherEmoji(code) {
 }
 
 // ═══════════════════════════════════════════════════════
-// GRÁFICAS
+// GRÁFICAS - MODIFICADAS PARA MAYOR LEGIBILIDAD
 // ═══════════════════════════════════════════════════════
 
 function renderCharts(daily) {
@@ -284,115 +282,74 @@ function renderCharts(daily) {
   if (tempChart) tempChart.destroy();
   if (rainChart) rainChart.destroy();
 
-  const commonOptions = {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: { x: { ticks: { font: { size: 11 } } }, y: { ticks: { font: { size: 11 } } } }
-  };
-
+  // Gráfico de Temperatura - Letras más grandes para lectura fácil
   const ctxTemp = document.getElementById('chartTemp');
   if (ctxTemp) {
     tempChart = new Chart(ctxTemp, {
       type: 'line',
       data: { labels, datasets: [
-        { label:'Máx °C', data: daily.temperature_2m_max, borderColor:'#e74c3c', backgroundColor:'rgba(231,76,60,0.15)', fill:true, tension:0.4, pointRadius:4 },
-        { label:'Mín °C', data: daily.temperature_2m_min, borderColor:'#3498db', backgroundColor:'rgba(52,152,219,0.10)', fill:true, tension:0.4, pointRadius:4 }
+        { label:'Máx °C', data: daily.temperature_2m_max, borderColor:'#e74c3c', backgroundColor:'rgba(231,76,60,0.15)', fill:true, tension:0.4, pointRadius:6, borderWidth: 3 },
+        { label:'Mín °C', data: daily.temperature_2m_min, borderColor:'#3498db', backgroundColor:'rgba(52,152,219,0.10)', fill:true, tension:0.4, pointRadius:6, borderWidth: 3 }
       ]},
-      options: { ...commonOptions, plugins: { legend: { display: true } } }
+      options: { 
+        responsive: true, maintainAspectRatio: false,
+        plugins: { 
+            legend: { 
+                display: true,
+                labels: { font: { size: 16, weight: 'bold' } } 
+            } 
+        },
+        scales: { 
+            x: { ticks: { font: { size: 14, weight: 'bold' } } }, 
+            y: { ticks: { font: { size: 14, weight: 'bold' } } } 
+        } 
+      }
     });
   }
 
+  // Gráfico de Lluvia - Convertido a Barras Horizontales
   const ctxRain = document.getElementById('chartRain');
   if (ctxRain) {
     const totalRain = daily.precipitation_sum.reduce((a, b) => a + b, 0);
     const hasRain = totalRain > 0;
-
-    // Si no hay lluvia, pintamos un anillo neutro segmentado para no mostrar la gráfica vacía
-    const rainData = hasRain ? daily.precipitation_sum : [1, 1, 1, 1, 1, 1, 1];
-    const rainColors = hasRain 
-      ? [
-          'rgba(46, 204, 113, 0.85)',  // Verde fresco
-          'rgba(52, 152, 219, 0.85)',  // Azul agua
-          'rgba(155, 89, 182, 0.85)',  // Violeta
-          'rgba(241, 196, 15, 0.85)',  // Amarillo sol
-          'rgba(230, 126, 34, 0.85)',  // Naranja cálido
-          'rgba(26, 188, 156, 0.85)',  // Turquesa
-          'rgba(149, 165, 166, 0.85)'   // Gris suave
-        ]
-      : Array(7).fill('rgba(200, 195, 185, 0.25)'); // Anillo gris si no hay lluvias esperadas
-      
-    const rainBorders = hasRain
-      ? ['#2ecc71', '#3498db', '#9b59b6', '#f1c40f', '#e67e22', '#1abc9c', '#95a5a6']
-      : Array(7).fill('#e2dccd');
+    
+    // Si no hay lluvia, mostramos barras en cero
+    const rainData = hasRain ? daily.precipitation_sum : [0, 0, 0, 0, 0, 0, 0];
 
     rainChart = new Chart(ctxRain, {
-      type: 'doughnut',
+      type: 'bar', // Tipo barra
       data: {
         labels: labels,
         datasets: [{
           label: 'Lluvia esperada (mm)',
           data: rainData,
-          backgroundColor: rainColors,
-          borderColor: rainBorders,
-          borderWidth: 2,
-          hoverOffset: hasRain ? 12 : 0
+          backgroundColor: '#3498db', // Color azul visible
+          borderRadius: 8 // Bordes redondeados
         }]
       },
       options: {
+        indexAxis: 'y', // ESTO HACE QUE LAS BARRAS SEAN HORIZONTALES
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
           legend: {
             display: true,
-            position: window.innerWidth < 500 ? 'bottom' : 'right',
             labels: {
-              boxWidth: 12,
-              font: { size: 12, family: "'Poppins', sans-serif", weight: 'bold' },
-              padding: 10,
+              font: { size: 16, family: "'Poppins', sans-serif", weight: 'bold' },
               color: '#2A2A28'
-            }
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const dayIndex = context.dataIndex;
-                const realValue = hasRain ? daily.precipitation_sum[dayIndex] : 0;
-                return ` ${context.label}: ${realValue} mm de lluvia`;
-              }
             }
           }
         },
-        cutout: '65%'
-      },
-      plugins: [{
-        id: 'centerText',
-        beforeDraw: function(chart) {
-          const { ctx } = chart;
-          const meta = chart.getDatasetMeta(0);
-          if (!meta || !meta.data || meta.data.length === 0) return;
-          
-          // Obtener centro exacto del gráfico de rosca
-          const firstArc = meta.data[0];
-          const centerX = firstArc.x;
-          const centerY = firstArc.y;
-          
-          ctx.save();
-          ctx.textBaseline = "middle";
-          ctx.textAlign = "center";
-          
-          // Etiqueta superior en el centro
-          ctx.font = "600 12px 'Poppins', sans-serif";
-          ctx.fillStyle = "#5E5C57";
-          ctx.fillText(hasRain ? "Lluvia Total" : "Clima Seco", centerX, centerY - 12);
-          
-          // Valor principal en el centro
-          ctx.font = "bold 18px 'Poppins', sans-serif";
-          ctx.fillStyle = hasRain ? "#2980b9" : "#C8863C";
-          ctx.fillText(hasRain ? `${totalRain.toFixed(1)} mm` : "☀️ Sin Lluvia", centerX, centerY + 10);
-          
-          ctx.restore();
+        scales: {
+          x: { 
+              ticks: { font: { size: 14, weight: 'bold' } },
+              title: { display: true, text: 'Milímetros (mm)', font: { size: 14, weight: 'bold' } }
+          },
+          y: { 
+              ticks: { font: { size: 14, weight: 'bold' } }
+          }
         }
-      }]
+      }
     });
   }
 }
@@ -643,8 +600,6 @@ async function sendChatMessage() {
     };
     if (imageB64) { body.imageBase64 = imageB64; body.imageMime = imageMime; }
 
-    // ── Llamada directa con fetch en lugar de supabaseClient.functions.invoke ──
-    // Esto funciona en localhost y en producción por igual, y muestra errores reales.
     const { data: { session } } = await supabaseClient.auth.getSession();
     const accessToken = session?.access_token || '';
 
@@ -661,7 +616,6 @@ async function sendChatMessage() {
       }
     );
 
-    // Leer respuesta siempre como texto primero para capturar errores HTML/vacíos
     const rawText = await response.text();
 
     if (!response.ok) {
@@ -686,7 +640,6 @@ async function sendChatMessage() {
   } catch (err) {
     console.error('Error en chat IA:', err);
     removeTyping(typingId);
-    // Muestra el error real en el chat para que puedas diagnosticar
     appendMessage('bot', `⚠️ Error: ${err.message}`);
   }
 }
@@ -735,11 +688,10 @@ function quickAsk(question) {
   sendChatMessage();
 }
 
-// Navegar los chips de preguntas rápidas con las flechas
 function scrollQuickChips(direction) {
   const container = document.getElementById('assistantQuick');
   if (!container) return;
-  const scrollAmount = 140; // px por click
+  const scrollAmount = 140; 
   container.scrollLeft += direction * scrollAmount;
   updateQuickNavButtons();
 }
@@ -773,7 +725,6 @@ function toggleAssistant() {
       const box = document.getElementById('messagesBox');
       if (box) box.scrollTop = box.scrollHeight;
       updateQuickNavButtons();
-      // Actualizar botones al hacer scroll manual
       const quickContainer = document.getElementById('assistantQuick');
       if (quickContainer) quickContainer.addEventListener('scroll', updateQuickNavButtons, { passive: true });
     }, 350);
@@ -830,4 +781,3 @@ function showFormError(el, msg) {
   el.textContent = msg;
   el.style.display = 'block';
 }
-
