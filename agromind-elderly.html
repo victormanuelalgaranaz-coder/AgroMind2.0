@@ -31,6 +31,12 @@
         <span class="logo-text">AgroMind</span>
       </div>
     </div>
+    <!-- Centro/Derecha: contador en línea -->
+    <div class="online-counter" id="onlineCounter" title="Productores conectados ahora">
+      <span class="online-dot"></span>
+      <span id="onlineCount">1</span>
+      <span class="online-label"> en línea</span>
+    </div>
     <!-- Derecha: botón salir (solo escritorio) -->
     <div class="nav-user-desktop">
       <button type="button" class="btn-logout" onclick="logoutUser()">🚪 Salir</button>
@@ -54,6 +60,8 @@
   </div>
 
   <div class="menu-title">Secciones</div>
+  <a href="#miscultivos"     class="menu-item" onclick="scrollToSection('miscultivos');     closeSideMenu();">🌿 Mis Cultivos</a>
+
   <a href="#clima"          class="menu-item" onclick="scrollToSection('clima');          closeSideMenu();">🌦️ Clima</a>
 
   <a href="#pronostico"     class="menu-item" onclick="scrollToSection('pronostico');     closeSideMenu();">📊 Pronóstico</a>
@@ -64,6 +72,10 @@
 
   <!-- Botón cerrar sesión — SOLO visible en móvil -->
   <div class="side-menu-footer" id="sideMenuFooter">
+    <div class="side-menu-online">
+      <span class="online-dot"></span>
+      <span id="onlineCountMobile">1</span> productores en línea
+    </div>
     <button type="button" class="side-menu-logout" onclick="logoutUser()">🚪 Cerrar Sesión</button>
   </div>
 </nav>
@@ -93,6 +105,17 @@
       <p class="hero-sub">Clima, cultivos y consejos de un experto, todo en un solo lugar.</p>
     </div>
     <div class="hero-emoji">🚜</div>
+  </section>
+
+  <!-- MIS CULTIVOS -->
+  <section id="miscultivos" class="section crops-section" aria-label="Mis cultivos">
+    <div class="section-header-row">
+      <h2 class="section-title">🌿 Mis Cultivos</h2>
+      <button type="button" class="btn-primary btn-add-crop" onclick="showAddCropForm()">＋ Añadir Cultivo</button>
+    </div>
+    <div class="crops-container" id="cropsContainer">
+      <p class="loading-text">Cargando cultivos...</p>
+    </div>
   </section>
 
   <!-- ANUNCIO 1 — visible en desktop, oculto en mobile -->
@@ -294,30 +317,88 @@
   </div>
 </div>
 
-<!-- ═══════ MODAL: AGREGAR CULTIVO ═══════ -->
+<!-- ═══════ MODAL: AGREGAR / EDITAR CULTIVO ═══════ -->
 <div id="modalAddCrop" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalCropTitle"
      onclick="if(event.target===this) closeModal('modalAddCrop')">
-  <div class="modal-content">
-    <h2 id="modalCropTitle">Agregar Nuevo Cultivo</h2>
+  <div class="modal-content modal-crop-content">
+    <h2 id="modalCropTitle">🌱 Agregar Nuevo Cultivo</h2>
+    <input type="hidden" id="cropEditId" value=""/>
     <div id="cropForm">
+
       <label for="cropType">Tipo de cultivo:</label>
       <select id="cropType" class="input-field">
-        <option value="">Seleccionar...</option>
-        <option value="soya">🌱 Soya</option>
-        <option value="maiz">🌽 Maíz</option>
-        <option value="girasol">🌻 Girasol</option>
-        <option value="arroz">🌾 Arroz</option>
-        <option value="trigo">🌾 Trigo</option>
-        <option value="frijol">🫘 Frijol</option>
-        <option value="algodón">☁️ Algodón</option>
+        <option value="">— Seleccionar cultivo —</option>
+        <optgroup label="🌾 Granos y Cereales">
+          <option value="soya">🌱 Soya</option>
+          <option value="maiz">🌽 Maíz</option>
+          <option value="arroz">🍚 Arroz</option>
+          <option value="trigo">🌾 Trigo</option>
+          <option value="quinua">⭐ Quinua</option>
+          <option value="cañahua">🌾 Cañahua</option>
+          <option value="amaranto">🌸 Amaranto</option>
+          <option value="cebada">🌾 Cebada</option>
+          <option value="sorgo">🌾 Sorgo</option>
+        </optgroup>
+        <optgroup label="🌿 Legumbres y Semillas">
+          <option value="frijol">🫘 Frijol</option>
+          <option value="mani">🥜 Maní</option>
+          <option value="garbanzo">🫘 Garbanzo</option>
+          <option value="arveja">🟢 Arveja</option>
+          <option value="haba">🫘 Haba</option>
+          <option value="girasol">🌻 Girasol</option>
+          <option value="algodón">🌨️ Algodón</option>
+        </optgroup>
+        <optgroup label="🥔 Tubérculos y Raíces">
+          <option value="papa">🥔 Papa</option>
+          <option value="yuca">🟡 Yuca</option>
+          <option value="camote">🍠 Camote</option>
+          <option value="oca">🟠 Oca</option>
+          <option value="remolacha">🟣 Remolacha</option>
+          <option value="zanahoria">🥕 Zanahoria</option>
+        </optgroup>
+        <optgroup label="🍅 Hortalizas">
+          <option value="tomate">🍅 Tomate</option>
+          <option value="cebolla">🧅 Cebolla</option>
+          <option value="ajo">🧄 Ajo</option>
+          <option value="pepino">🥒 Pepino</option>
+          <option value="zapallo">🎃 Zapallo</option>
+          <option value="lechuga">🥬 Lechuga</option>
+          <option value="espinaca">🥬 Espinaca</option>
+          <option value="locoto">🌶️ Locoto / Pimiento</option>
+          <option value="repollo">🥦 Repollo</option>
+          <option value="brocoli">🥦 Brócoli</option>
+        </optgroup>
+        <optgroup label="🍌 Frutas y Tropicales">
+          <option value="platano">🍌 Plátano / Banana</option>
+          <option value="mango">🥭 Mango</option>
+          <option value="naranja">🍊 Naranja</option>
+          <option value="limon">🍋 Limón</option>
+          <option value="palta">🥑 Palta / Aguacate</option>
+          <option value="cacao">🍫 Cacao</option>
+          <option value="cafe">☕ Café</option>
+          <option value="piña">🍍 Piña</option>
+          <option value="maracuya">🟡 Maracuyá</option>
+          <option value="caña">🎋 Caña de Azúcar</option>
+        </optgroup>
       </select>
+
       <label for="cropArea">Área en hectáreas:</label>
-      <input type="number" id="cropArea" class="input-field" placeholder="Ej: 5" step="0.1" min="0.1" max="99999"/>
+      <input type="number" id="cropArea" class="input-field" placeholder="Ej: 5.5" step="0.1" min="0.1" max="99999"/>
+
       <label for="cropDate">Fecha de siembra:</label>
       <input type="date" id="cropDate" class="input-field"/>
-      <p id="cropFormError" style="color:red;display:none;margin:4px 0 8px;"></p>
+
+      <label for="cropVariety">Variedad / Nombre comercial: <span class="label-optional">(opcional)</span></label>
+      <input type="text" id="cropVariety" class="input-field" placeholder="Ej: Papa Waych'a, Maíz DK-7088..."/>
+
+      <label for="cropDetails">Detalles de la planta: <span class="label-optional">(opcional)</span></label>
+      <textarea id="cropDetails" class="input-field input-textarea"
+        placeholder="Ej: Profundidad de siembra 8 cm, distancia entre plantas 30 cm, suelo arcilloso, aplicación de NPK 15-15-15 al inicio..."></textarea>
+
+      <p id="cropFormError" class="form-error"></p>
+
       <div class="modal-buttons">
-        <button type="button" class="btn-primary btn-large" onclick="saveCrop()">Guardar Cultivo</button>
+        <button type="button" class="btn-primary btn-large" onclick="saveCrop()">💾 Guardar Cultivo</button>
         <button type="button" class="btn-secondary btn-large" onclick="closeModal('modalAddCrop')">Cancelar</button>
       </div>
     </div>
