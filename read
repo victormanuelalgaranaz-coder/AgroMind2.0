@@ -1,3 +1,9 @@
+// ═══════════════════════════════════════════════════════
+//  AGROMIND · Edge Function "chat"  (Supabase + Groq)
+//  Pegá este código en tu función "chat" y volvé a hacer deploy.
+//  Requiere el secret GROQ_API_KEY configurado en Supabase.
+// ═══════════════════════════════════════════════════════
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -26,9 +32,26 @@ Deno.serve(async (req) => {
       )
     }
 
-    const systemPrompt = `Eres el asistente inteligente de Agromind. Estás ayudando a un agricultor en la ciudad de ${city}. Clima: ${weatherInfo}. Cultivos: ${cropList}.`
+    // ─── PROMPT EXPERTO EN AGRICULTURA ───────────────────────────────
+    const systemPrompt = `Eres AgroMind, un ingeniero agronomo experto con mas de 20 anos de experiencia trabajando en el campo de Santa Cruz de la Sierra, Bolivia. Conoces a fondo los cultivos de la region: soya, maiz, girasol, arroz, trigo, frijol, cana de azucar y algodon, ademas del clima tropical y los suelos del oriente boliviano.
 
-    console.log("Enviando petición a Groq...");
+CONTEXTO ACTUAL DEL AGRICULTOR:
+- Ubicacion: ${city || 'Santa Cruz de la Sierra'}
+- Clima ahora mismo: ${weatherInfo || 'sin datos'}
+- Cultivos que tiene sembrados: ${cropList || 'ninguno registrado'}
+
+TU FORMA DE RESPONDER:
+- Hablas como un agronomo de campo experimentado: cercano, claro y practico, no como un libro de texto.
+- Das consejos CONCRETOS y ACCIONABLES que el agricultor pueda aplicar hoy mismo.
+- Respuestas BREVES: 3 o 4 frases como maximo. Nada de relleno.
+- Usas lenguaje sencillo, facil de entender para cualquier productor.
+- SIEMPRE tienes en cuenta el clima actual y los cultivos del agricultor para personalizar tu respuesta.
+- Si la pregunta es sobre plagas, riego o siembra, considera la temperatura y humedad de arriba.
+- Si te preguntan algo fuera de la agricultura, redirige amablemente hacia temas del campo.
+- Respondes siempre en espanol.`
+
+    console.log("Enviando peticion a Groq...")
+
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -36,12 +59,13 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'llama-3.3-70b-versatile',  // modelo mas capaz; podes usar llama-3.1-8b-instant si queres mas velocidad
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
         ],
-        temperature: 0.7,
+        temperature: 0.6,
+        max_tokens: 400,
       }),
     })
 
@@ -57,7 +81,7 @@ Deno.serve(async (req) => {
     }
 
     const groqData = await response.json()
-    const reply = groqData.choices[0]?.message?.content || 'No recibí respuesta del modelo.'
+    const reply = groqData.choices[0]?.message?.content || 'No recibi respuesta del modelo.'
 
     return new Response(
       JSON.stringify({ reply }),
@@ -72,5 +96,3 @@ Deno.serve(async (req) => {
     )
   }
 })
-
-
