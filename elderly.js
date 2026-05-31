@@ -817,6 +817,19 @@ function toggleAssistant() {
   document.getElementById('assistantOverlay')?.classList.toggle('open', assistantOpen);
   document.getElementById('assistantFab')?.classList.toggle('open',     assistantOpen);
 
+  // Evitar salto de layout al ocultar scrollbar: calcular ancho del scrollbar y aplicar padding-right
+  try {
+    const body = document.body;
+    if (assistantOpen) {
+      const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+      if (scrollBarWidth > 0) body.style.paddingRight = scrollBarWidth + 'px';
+      body.classList.add('assistant-open');
+    } else {
+      body.classList.remove('assistant-open');
+      body.style.paddingRight = '';
+    }
+  } catch (e) { console.warn('assistant scroll lock failed', e); }
+
   if (assistantOpen) {
     hideAssistantBubble();
     setTimeout(() => {
@@ -853,12 +866,23 @@ setInterval(showAssistantBubble, 18000);
 
 function openModal(id) {
   const modal = document.getElementById(id);
-  if (modal) { modal.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+  if (modal) {
+    modal.style.display = 'flex';
+    // prevenir salto de layout por desaparición del scrollbar
+    const body = document.body;
+    const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+    if (scrollBarWidth > 0) body.style.paddingRight = scrollBarWidth + 'px';
+    body.classList.add('modal-open');
+  }
 }
 
 function closeModal(id) {
   const modal = document.getElementById(id);
-  if (modal) { modal.style.display = 'none'; document.body.style.overflow = ''; }
+  if (modal) {
+    modal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+    document.body.style.paddingRight = '';
+  }
 }
 
 // ═══════════════════════════════════════════════════════
