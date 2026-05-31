@@ -6,12 +6,13 @@
   <title>AgroMind - Agronomía para Mayores</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style-elderly.css"/>
-  <!-- ✅ Supabase ANTES que cualquier script que lo use -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- ✅ Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 </head>
 <body>
 
@@ -22,19 +23,71 @@
       <span class="logo-icon">🌾</span>
       <span class="logo-text">AgroMind</span>
     </div>
-    <div class="nav-user">
+    <!-- En ESCRITORIO: nombre y salir visibles. En MÓVIL: ocultos, van en el menú hamburguesa -->
+    <div class="nav-user nav-user-desktop">
       <span class="user-name" id="userName">Cargando...</span>
-      <!-- ✅ type="button" evita submit accidental dentro de forms -->
       <button type="button" class="btn-logout" onclick="logoutUser()">Salir</button>
     </div>
   </div>
 </nav>
 
+<!-- ═══════ BOTÓN HAMBURGUESA ═══════ -->
+<button type="button" id="menuToggle" class="menu-toggle" aria-label="Abrir menú" onclick="toggleSideMenu()">
+  <span></span><span></span><span></span>
+</button>
+
+<!-- ═══════ MENÚ LATERAL ═══════ -->
+<nav id="sideMenu" class="side-menu" role="navigation" aria-label="Menú de navegación">
+  <button type="button" class="menu-close" onclick="closeSideMenu()" aria-label="Cerrar menú">✕</button>
+
+  <!-- Bloque usuario — SOLO visible en móvil -->
+  <div class="side-menu-user" id="sideMenuUserBlock">
+    <span class="side-menu-avatar">👤</span>
+    <span class="side-menu-name" id="sideMenuUserName">Cargando...</span>
+  </div>
+
+  <div class="menu-title">Secciones</div>
+  <a href="#clima"          class="menu-item" onclick="scrollToSection('clima');          closeSideMenu();">🌦️ Clima</a>
+  <a href="#cultivos"       class="menu-item" onclick="scrollToSection('cultivos');       closeSideMenu();">🌱 Mis Cultivos</a>
+  <a href="#pronostico"     class="menu-item" onclick="scrollToSection('pronostico');     closeSideMenu();">📊 Pronóstico</a>
+  <a href="#alertas"        class="menu-item" onclick="scrollToSection('alertas');        closeSideMenu();">⚠️ Alertas</a>
+  <a href="#recomendaciones"class="menu-item" onclick="scrollToSection('recomendaciones');closeSideMenu();">💡 Recomendaciones</a>
+
+  <!-- Botón cerrar sesión — SOLO visible en móvil -->
+  <div class="side-menu-footer" id="sideMenuFooter">
+    <button type="button" class="side-menu-logout" onclick="logoutUser()">🚪 Cerrar Sesión</button>
+  </div>
+</nav>
+
+<div id="menuOverlay" class="menu-overlay" onclick="closeSideMenu()"></div>
+
+<!-- ═══════ BANNER FLOTANTE IA ═══════ -->
+<div id="aiRecommendationBanner" class="ai-recommendation-banner" role="alert" aria-live="polite">
+  <div class="recommendation-content">
+    <span class="recommendation-icon">💬</span>
+    <div class="recommendation-text">
+      <div class="recommendation-title">Sugerencia de IA</div>
+      <div id="recommendationMessage" class="recommendation-message">Cargando recomendación...</div>
+    </div>
+    <button type="button" class="recommendation-close" onclick="closeAiRecommendation()" aria-label="Cerrar">✕</button>
+  </div>
+</div>
+
 <!-- ═══════ CONTENIDO PRINCIPAL ═══════ -->
 <main class="main-container" id="mainContent">
 
-  <!-- ═══ 1: CLIMA ACTUAL ═══ -->
-  <section class="section weather-section" aria-label="Clima actual">
+  <!-- BANNER BIENVENIDA con nombre personalizado -->
+  <section class="hero-banner">
+    <div class="hero-text">
+      <p class="hero-welcome" id="heroWelcome">¡Bienvenido!</p>
+      <h1 class="hero-title">Tu campo digital</h1>
+      <p class="hero-sub">Clima, cultivos y consejos de un experto, todo en un solo lugar.</p>
+    </div>
+    <div class="hero-emoji">🚜</div>
+  </section>
+
+  <!-- 1: CLIMA -->
+  <section id="clima" class="section weather-section" aria-label="Clima actual">
     <h2 class="section-title">🌦️ Clima Hoy</h2>
     <div class="weather-grid">
       <div class="weather-box">
@@ -54,92 +107,137 @@
         <div class="temp-label">Lluvia</div>
       </div>
     </div>
-    <button type="button" class="btn-primary btn-large" onclick="refreshWeather()">
-      Actualizar Clima
-    </button>
+    <div class="weather-map">
+      <div class="location-info" id="locationInfo">Ubicación: Cargando...</div>
+      <div id="map" aria-label="Mapa de la ubicación del clima actual"></div>
+    </div>
+    <button type="button" class="btn-primary btn-large" onclick="refreshWeather()">🔄 Actualizar Clima</button>
   </section>
 
-  <!-- ═══ 2: MIS CULTIVOS ═══ -->
-  <section class="section crops-section" aria-label="Mis cultivos">
+  <!-- 2: CULTIVOS -->
+  <section id="cultivos" class="section crops-section" aria-label="Mis cultivos">
     <h2 class="section-title">🌱 Mis Cultivos</h2>
     <div class="crops-container" id="cropsContainer">
       <p class="loading-text">Cargando cultivos...</p>
     </div>
-    <button type="button" class="btn-primary btn-large" onclick="showAddCropForm()">
-      + Añadir Cultivo
-    </button>
+    <button type="button" class="btn-primary btn-large" onclick="showAddCropForm()">+ Añadir Cultivo</button>
   </section>
 
-  <!-- ═══ 3: PRONÓSTICO 7 DÍAS ═══ -->
-  <section class="section charts-section" aria-label="Pronóstico semanal">
+  <!-- 3: PRONÓSTICO -->
+  <section id="pronostico" class="section charts-section" aria-label="Pronóstico semanal">
     <h2 class="section-title">📊 Pronóstico 7 Días</h2>
     <div class="charts-grid">
       <div class="chart-box">
         <h3>Temperatura (°C)</h3>
-        <!-- ✅ canvas necesita contenedor con tamaño definido para que Chart.js funcione -->
-        <div class="canvas-wrapper">
-          <canvas id="chartTemp" aria-label="Gráfica de temperatura" role="img"></canvas>
-        </div>
+        <div class="canvas-wrapper"><canvas id="chartTemp" role="img"></canvas></div>
       </div>
       <div class="chart-box">
         <h3>Lluvia (mm)</h3>
-        <div class="canvas-wrapper">
-          <canvas id="chartRain" aria-label="Gráfica de lluvia" role="img"></canvas>
-        </div>
+        <div class="canvas-wrapper"><canvas id="chartRain" role="img"></canvas></div>
       </div>
     </div>
   </section>
 
-  <!-- ═══ 4: ALERTAS DE PLAGAS ═══ -->
-  <section class="section alerts-section" aria-label="Alertas de plagas">
+  <!-- 4: ALERTAS -->
+  <section id="alertas" class="section alerts-section" aria-label="Alertas de plagas">
     <h2 class="section-title">⚠️ Alertas de Plagas</h2>
     <div class="alerts-container" id="alertsContainer">
       <p class="loading-text">Cargando alertas...</p>
     </div>
   </section>
 
-  <!-- ═══ 5: RECOMENDACIONES ═══ -->
-  <section class="section recommendations-section" aria-label="Recomendaciones">
+  <!-- 5: RECOMENDACIONES -->
+  <section id="recomendaciones" class="section recommendations-section" aria-label="Recomendaciones">
     <h2 class="section-title">💡 Recomendaciones</h2>
     <div class="recommendations-container" id="recommendationsContainer">
       <p class="loading-text">Cargando recomendaciones...</p>
     </div>
   </section>
 
-  <!-- ═══ 6: ASISTENTE IA ═══ -->
-  <section class="section assistant-section" aria-label="Asistente agronómico">
-    <h2 class="section-title">🤖 Asistente Agronómico</h2>
-    <div class="chat-container">
-      <div class="messages-box" id="messagesBox" role="log" aria-live="polite">
-        <div class="msg-bot">Hola, soy tu asistente de agronomía. ¿Cómo puedo ayudarte hoy?</div>
-      </div>
-      <div class="input-area">
-        <!-- ✅ Enter también envía el mensaje -->
-        <input
-          type="text"
-          id="chatInput"
-          placeholder="Escribe tu pregunta..."
-          class="input-text"
-          autocomplete="off"
-          onkeydown="if(event.key==='Enter') sendChatMessage()"
-          maxlength="500"
-        />
-        <button type="button" class="btn-primary" onclick="sendChatMessage()">Enviar</button>
-      </div>
-    </div>
-  </section>
-
 </main>
 
+<!-- ═══════ FOOTER ═══════ -->
+<footer class="app-footer">
+  <div class="footer-content">
+    <div class="footer-brand">
+      <span class="footer-logo">🌾</span>
+      <span class="footer-name">AgroMind</span>
+    </div>
+    <p class="footer-desc">Tu asistente digital de agronomía. Inteligencia artificial al servicio del campo boliviano.</p>
+    <div class="footer-links">
+      <span>🌱 Cultivos inteligentes</span>
+      <span>🌦️ Clima en tiempo real</span>
+      <span>💡 IA agronómica</span>
+      <span>📷 Análisis de imágenes</span>
+    </div>
+    <p class="footer-copy">© 2025 AgroMind · Todos los derechos reservados · Hecho con ❤️ para el campo boliviano</p>
+  </div>
+</footer>
+
+<!-- ═══════ ASISTENTE IA FLOTANTE ═══════ -->
+<div id="assistantBubble" class="assistant-bubble">
+  <span class="bubble-emoji">👨‍🌾</span>
+  <span>¿Tienes dudas? ¡Pregúntame!</span>
+  <button type="button" class="bubble-close" onclick="hideAssistantBubble(event)">✕</button>
+</div>
+
+<button type="button" id="assistantFab" class="assistant-fab" onclick="toggleAssistant()" aria-label="Abrir asistente agronómico">
+  <span class="fab-emoji">👨‍🌾</span>
+  <span class="fab-ring"></span>
+</button>
+
+<div id="assistantOverlay" class="assistant-overlay" onclick="toggleAssistant()"></div>
+<div id="assistantPanel" class="assistant-panel" role="dialog" aria-modal="true" aria-label="Asistente agronómico">
+  <div class="assistant-header">
+    <div class="assistant-header-title">
+      <span class="assistant-avatar">👨‍🌾</span>
+      <div>
+        <div class="assistant-name">Asistente Agrónomo</div>
+        <div class="assistant-status">● En línea · Experto en agricultura</div>
+      </div>
+    </div>
+    <button type="button" class="assistant-close" onclick="toggleAssistant()" aria-label="Cerrar">✕</button>
+  </div>
+
+  <div class="messages-box" id="messagesBox" role="log" aria-live="polite">
+    <div class="msg-bot">¡Hola! Soy tu asistente agrónomo. Pregúntame sobre tus cultivos, plagas, riego, o envíame una foto de tu planta para que la analice. 🌱📷</div>
+  </div>
+
+  <!-- Chips de preguntas rápidas — scroll horizontal en móvil -->
+  <div class="assistant-quick">
+    <button type="button" class="quick-chip" onclick="quickAsk('¿Qué debo hacer hoy con mis cultivos según el clima?')">☀️ Consejo del día</button>
+    <button type="button" class="quick-chip" onclick="quickAsk('¿Cómo controlo las plagas en esta temporada?')">🐛 Plagas</button>
+    <button type="button" class="quick-chip" onclick="quickAsk('¿Cuándo y cómo debo regar mis cultivos?')">💧 Riego</button>
+    <button type="button" class="quick-chip" onclick="quickAsk('¿Qué fertilizante debo usar para mis cultivos?')">🌿 Fertilizantes</button>
+    <button type="button" class="quick-chip" onclick="quickAsk('¿Cuándo es el mejor momento para cosechar?')">🌾 Cosecha</button>
+    <button type="button" class="quick-chip" onclick="quickAsk('¿Cómo preparo el suelo para la próxima siembra?')">🪱 Preparar suelo</button>
+    <button type="button" class="quick-chip" onclick="quickAsk('¿Hay enfermedades fúngicas que deba prevenir con esta humedad?')">🍄 Hongos</button>
+    <button type="button" class="quick-chip" onclick="quickAsk('¿Qué semillas son mejores para esta época del año?')">🌱 Semillas</button>
+    <button type="button" class="quick-chip" onclick="quickAsk('¿Cómo protejo mis cultivos del calor extremo?')">🌡️ Calor extremo</button>
+  </div>
+
+  <!-- Previsualización imagen adjunta -->
+  <div id="imagePreviewArea" class="image-preview-area" style="display:none;">
+    <img id="imagePreview" src="" alt="Imagen adjunta" class="image-preview-thumb"/>
+    <span id="imagePreviewName" class="image-preview-name"></span>
+    <button type="button" class="image-preview-remove" onclick="removeAttachedImage()" aria-label="Quitar imagen">✕</button>
+  </div>
+
+  <div class="input-area">
+    <!-- Input oculto: en móvil abre cámara, en escritorio el explorador de archivos -->
+    <input type="file" id="imageInput" accept="image/*" capture="environment" style="display:none" onchange="handleImageSelected(event)"/>
+    <button type="button" class="btn-camera" onclick="document.getElementById('imageInput').click()" title="Adjuntar foto o imagen">📷</button>
+    <input type="text" id="chatInput" placeholder="Escribe tu pregunta..." class="input-text"
+      autocomplete="off" onkeydown="if(event.key==='Enter') sendChatMessage()" maxlength="500"/>
+    <button type="button" class="btn-send" onclick="sendChatMessage()" aria-label="Enviar">➤</button>
+  </div>
+</div>
+
 <!-- ═══════ MODAL: AGREGAR CULTIVO ═══════ -->
-<!-- ✅ role="dialog" + aria-modal para accesibilidad -->
-<!-- ✅ Click en overlay cierra el modal -->
 <div id="modalAddCrop" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalCropTitle"
      onclick="if(event.target===this) closeModal('modalAddCrop')">
   <div class="modal-content">
     <h2 id="modalCropTitle">Agregar Nuevo Cultivo</h2>
-
-    <!-- ✅ NO usar <form> con submit aquí; manejamos con el botón directamente -->
     <div id="cropForm">
       <label for="cropType">Tipo de cultivo:</label>
       <select id="cropType" class="input-field">
@@ -152,39 +250,20 @@
         <option value="frijol">🫘 Frijol</option>
         <option value="algodón">☁️ Algodón</option>
       </select>
-
       <label for="cropArea">Área en hectáreas:</label>
-      <input
-        type="number"
-        id="cropArea"
-        class="input-field"
-        placeholder="Ej: 5"
-        step="0.1"
-        min="0.1"
-        max="99999"
-      />
-
+      <input type="number" id="cropArea" class="input-field" placeholder="Ej: 5" step="0.1" min="0.1" max="99999"/>
       <label for="cropDate">Fecha de siembra:</label>
       <input type="date" id="cropDate" class="input-field"/>
-
-      <!-- ✅ Mensaje de error inline -->
-      <p id="cropFormError" style="color:red; display:none; margin: 4px 0 8px;"></p>
-
+      <p id="cropFormError" style="color:red;display:none;margin:4px 0 8px;"></p>
       <div class="modal-buttons">
-        <button type="button" class="btn-primary btn-large" onclick="saveCrop()">
-          Guardar Cultivo
-        </button>
-        <button type="button" class="btn-secondary btn-large" onclick="closeModal('modalAddCrop')">
-          Cancelar
-        </button>
+        <button type="button" class="btn-primary btn-large" onclick="saveCrop()">Guardar Cultivo</button>
+        <button type="button" class="btn-secondary btn-large" onclick="closeModal('modalAddCrop')">Cancelar</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ═══════ SCRIPTS (orden importa: supabase.js antes que app-elderly.js) ═══════ -->
 <script src="supabase.js"></script>
 <script src="elderly.js"></script>
-
 </body>
 </html>
