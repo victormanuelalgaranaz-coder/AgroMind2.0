@@ -10,23 +10,32 @@ html {
 }
 
 :root {
-  --primary: #C8863C;        /* Marrón cálido dorado */
-  --primary-dark: #A66E2C;
-  --secondary: #5BA851;      /* Verde natural */
-  --secondary-dark: #468A3D;
-  --accent: #F0A028;         /* Naranja */
-  --danger: #E05A4A;
-  --bg: #F3EFE4;             /* Fondo beige */
-  --bg-grad-1: #F6F2E8;
-  --bg-grad-2: #EAE3D2;
-  --card-bg: #FFFFFF;
-  --text-dark: #2A2A28;
-  --text-light: #5E5C57;
-  --border: #E2DCCD;
-  --success: #2E9E5B;
-  --warning: #E8932A;
-  --shadow: 0 4px 16px rgba(90, 70, 40, 0.10);
-  --shadow-lg: 0 10px 30px rgba(90, 70, 40, 0.16);
+/* ☕ COLORES PRINCIPALES (Estilo Café Moderno / Caramelo) */
+  --primary: #8E5A2B;         /* Café caramelo tostado (Para botones y enlaces principales) */
+  --primary-dark: #6A421E;    /* Café espresso oscuro (Para el efecto hover de los botones) */
+  --secondary: #4A3525;       /* Café profundo elegante (Para barras de navegación y títulos fuertes) */
+  --secondary-dark: #35251A;  /* Café grano oscuro */
+  --accent: #D4A373;          /* Café con leche claro / Arena (Para detalles y decoraciones) */
+
+  /* 🌿 ESTADOS FUNCIONALES (Adaptados para combinar con la paleta café) */
+  --success: #3B6B4C;         /* Verde oliva/hoja natural (Significa éxito y cultivos sanos) */
+  --warning: #D97706;         /* Naranja tostado / Ámbar (Para alertas moderadas) */
+  --danger: #991B1B;          /* Rojo terracota / Ladrillo oscuro (Para alertas críticas o peligro) */
+
+  /* 🍦 FONDOS Y SUPERFICIES (Tonos crema suaves que descansan la vista) */
+  --bg: #F4EFE6;              /* Fondo general beige claro */
+  --bg-grad-1: #F9F6F0;       /* Degradado superior (crema suave) */
+  --bg-grad-2: #EAE2D5;       /* Degradado inferior (arena suave) */
+  --card-bg: #FFFFFF;         /* Fondo de tarjetas (Blanco puro para un contraste perfecto) */
+
+  /* 📖 TIPOGRAFÍA (Evitamos el negro puro para dar más calidez) */
+  --text-dark: #261A12;       /* Café espresso casi negro (Máxima legibilidad para adultos mayores) */
+  --text-light: #615043;      /* Café medio (Para textos secundarios o descripciones cortas) */
+  --border: #DDD4C4;          /* Líneas divisorias en tono arena sutil */
+
+  /* ☁️ EFECTOS Y BORDES */
+  --shadow: 0 4px 16px rgba(74, 53, 37, 0.08);     /* Sombra suave con tinte marrón */
+  --shadow-lg: 0 10px 30px rgba(74, 53, 37, 0.14); /* Sombra grande con tinte marrón */
   --radius: 18px;
 }
 
@@ -38,6 +47,19 @@ body {
   font-size: 18px;
   line-height: 1.6;
   min-height: 100vh;
+  /* 1. LA MAGIA: Capa oscura + Tu imagen */
+    /* Cambia 'nombre-de-tu-imagen.jpg' por el nombre real de tu archivo */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('imagen/FONDO.JPG');
+    
+    /* 2. Ajustes para que se vea perfecta en toda la pantalla */
+    background-size: cover;          /* Hace que la imagen cubra toda la pantalla sin dejar huecos */
+    background-position: center;     /* Centra la imagen */
+    background-attachment: fixed;    /* Hace que el fondo se quede quieto cuando el usuario baja por la página */
+    background-repeat: no-repeat;    /* Evita que la imagen se repita como un mosaico */
+
+    /* (Mantén aquí cualquier otro estilo que ya tuvieras en tu body, como color de texto o tipo de letra) */
+    font-family: 'Poppins', sans-serif;
+    color: #ffffff;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -615,7 +637,7 @@ body.menu-open #menuToggle {
   border: 3px solid rgba(255, 255, 255, 0.5);
   box-shadow: 0 8px 26px rgba(70, 138, 61, 0.45);
   cursor: pointer;
-  z-index: 1000;
+  z-index: 1500; /* Elevado para estar siempre encima de anuncios y cualquier sección */
   display: flex; align-items: center; justify-content: center;
 }
 .assistant-fab:hover { box-shadow: 0 10px 32px rgba(70, 138, 61, 0.6); filter: brightness(1.1); }
@@ -1160,4 +1182,231 @@ body.menu-open #menuToggle {
   font-size: 13px; color: rgba(255,255,255,0.4);
   border-top: 1px solid rgba(255,255,255,0.1);
   padding-top: 16px; margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANUNCIOS DESKTOP — Incrustados entre secciones
+   Visibles en escritorio, ocultos en mobile
+   ═══════════════════════════════════════════════════════ */
+.ad-container {
+  position: relative;
+  background: linear-gradient(135deg, #FFFDF4 0%, #FFF8E1 100%);
+  border: 2px dashed #DAA520;
+  border-radius: 20px;
+  padding: 22px 24px;
+  margin: 8px 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 4px 16px rgba(218, 165, 32, 0.10);
+  overflow: hidden;
+}
+
+/* Franja decorativa izquierda */
+.ad-container::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, #DAA520, #F0A028);
+  border-radius: 20px 0 0 20px;
+}
+
+.ad-label {
+  position: absolute;
+  top: 10px; right: 14px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #ff0000;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  background: rgba(218,165,32,0.12);
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+.ad-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #5A4010;
+  flex-shrink: 0;
+  min-width: 180px;
+}
+
+.ad-content {
+  font-size: 14px;
+  color: #7A6030;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.ad-button {
+  background: linear-gradient(135deg, #5c4500 0%, #B8860B 100%);
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: 'Poppins', sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  box-shadow: 0 3px 10px rgba(218, 165, 32, 0.3);
+}
+.ad-button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 14px rgba(218, 165, 32, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANUNCIOS MOBILE — Solo al final, solo en celular
+   Ocultos en desktop, visibles en mobile
+   ═══════════════════════════════════════════════════════ */
+.ads-mobile-section {
+  display: none; /* OCULTO en desktop por defecto */
+  background: linear-gradient(180deg, #F8F4E8 0%, #F0EBD8 100%);
+  padding: 24px 16px 100px; /* padding-bottom grande para no tapar el FAB */
+  border-top: 3px solid #DAA520;
+}
+
+.ads-mobile-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #5A4010;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(218,165,32,0.3);
+}
+
+.ads-mobile-icon { font-size: 22px; }
+
+.ads-mobile-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ad-mobile-card {
+  background: white;
+  border-radius: 18px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto auto;
+  gap: 4px 14px;
+  align-items: start;
+  box-shadow: 0 4px 16px rgba(90, 70, 40, 0.08);
+  border: 1.5px solid rgba(218,165,32,0.2);
+  position: relative;
+}
+
+.ad-mobile-badge {
+  position: absolute;
+  top: 12px; right: 14px;
+  background: linear-gradient(135deg, #DAA520, #B8860B);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.ad-mobile-emoji {
+  font-size: 36px;
+  grid-row: 1 / 3;
+  grid-column: 1;
+  line-height: 1;
+  align-self: center;
+}
+
+.ad-mobile-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #3A2A08;
+  grid-column: 2;
+  grid-row: 1;
+  padding-right: 50px; /* espacio para el badge */
+}
+
+.ad-mobile-desc {
+  font-size: 13px;
+  color: #7A6030;
+  line-height: 1.4;
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.ad-mobile-btn {
+  grid-column: 1 / 3;
+  grid-row: 3;
+  margin-top: 12px;
+  background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+}
+.ad-mobile-btn:hover { filter: brightness(1.1); }
+
+/* ── Media Query: MOBILE ≤ 768px ── */
+@media (max-width: 768px) {
+  /* Ocultar anuncios incrustados de desktop */
+  .ad-container {
+    display: none !important;
+  }
+
+  /* Mostrar sección de anuncios mobile al final */
+  .ads-mobile-section {
+    display: block;
+  }
+
+  /* Asegurar que el main tenga espacio para el FAB */
+  .main-container {
+    padding-bottom: 100px;
+  }
+}
+/* ═══════════════════════════════════════════════════════
+   ANUNCIOS — Sistema responsivo desktop/mobile
+   ═══════════════════════════════════════════════════════ */
+
+/* Contenedor de anuncios incrustados (DESKTOP) */
+.ad-container {
+  background: linear-gradient(135deg, #FFF8DC 0%, #FFFAF0 100%);
+  border: 3px solid #8d6707;
+  border-radius: 20px;
+  padding: 20px;
+  margin: 24px 0;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(218, 165, 32, 0.15);
+  display: block; /* Visible por defecto en desktop */
+}
+
+.ad-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #8B6914;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ad-content {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 12px;
 }
