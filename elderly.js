@@ -503,7 +503,6 @@ function removeAttachedImage() {
   const imgInput = document.getElementById('imageInput');
   if (imgInput) imgInput.value = '';
 }
-
 async function sendChatMessage() {
   const input    = document.getElementById('chatInput');
   const text     = input?.value.trim();
@@ -517,9 +516,9 @@ async function sendChatMessage() {
   if (hasImage) appendImageMessage('user', `data:${attachedImageMime};base64,${attachedImageBase64}`);
   await saveChatMessage('user', userText);
 
-  const typingId    = appendTyping();
-  const imageB64    = attachedImageBase64;
-  const imageMime   = attachedImageMime;
+  const typingId  = appendTyping();
+  const imageB64  = attachedImageBase64;
+  const imageMime = attachedImageMime;
   removeAttachedImage();
 
   try {
@@ -529,14 +528,47 @@ async function sendChatMessage() {
       : 'sin datos de clima';
 
     const body = {
-      message: text || 'Analiza esta imagen de mi cultivo y dime qué observas.',
-      cropList, weatherInfo,
+      message:     text || 'Analiza esta imagen de mi cultivo y dime qué observas.',
+      cropList,
+      weatherInfo,
       city: window.CITY || 'Santa Cruz de la Sierra'
     };
     if (imageB64) { body.imageBase64 = imageB64; body.imageMime = imageMime; }
 
-    const { data, error } = await supabaseClient.functions.invoke('chat', { body });
-    if (error) throw new Error(error.message);
+    // ── Llamada directa con fetch en lugar de supabaseClient.functions.invoke ──
+    // Esto funciona en localhost y en producción por igual, y muestra errores reales.
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const accessToken = session?.access_token || '';
+
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/chat`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'apikey':        SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify(body),
+      }
+    );
+
+    // Leer respuesta siempre como texto primero para capturar errores HTML/vacíos
+    const rawText = await response.text();
+
+    if (!response.ok) {
+      console.error('Edge Function HTTP error:', response.status, rawText);
+      throw new Error(`Error ${response.status}: ${rawText || 'Sin respuesta del servidor'}`);
+    }
+
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      throw new Error(`Respuesta inválida del servidor: ${rawText}`);
+    }
+
+    if (data.error) throw new Error(data.error);
 
     const reply = data?.reply || 'No pude procesar tu pregunta. Intenta de nuevo.';
     removeTyping(typingId);
@@ -546,10 +578,10 @@ async function sendChatMessage() {
   } catch (err) {
     console.error('Error en chat IA:', err);
     removeTyping(typingId);
-    appendMessage('bot', '⚠️ Hubo un error al conectar con el asistente. Verifica tu conexión e intenta de nuevo.');
+    // Muestra el error real en el chat para que puedas diagnosticar
+    appendMessage('bot', `⚠️ Error: ${err.message}`);
   }
 }
-
 function appendMessage(role, text) {
   const box = document.getElementById('messagesBox');
   if (!box) return;
