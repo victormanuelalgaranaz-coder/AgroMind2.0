@@ -4,6 +4,10 @@
    ═══════════════════════════════════════════════════════ */
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 100px; /* Offset para que las anclas no queden tapadas por el navbar pegajoso */
+}
 
 :root {
   --primary: #C8863C;        /* Marrón cálido dorado */
@@ -42,14 +46,14 @@ body {
 
 .navbar {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  padding: 16px 30px;
+  padding: 16px 95px 16px 30px; /* Espacio a la derecha para no chocar con el botón hamburguesa */
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
-/* Menú hamburguesa y banner IA */
+/* Menú hamburguesa */
 .menu-toggle {
   position: fixed;
   top: 18px;
@@ -64,12 +68,19 @@ body {
   padding: 6px;
   z-index: 1100;
   cursor: pointer;
+  transition: opacity 0.2s;
 }
 .menu-toggle span {
   display: block;
   height: 4px;
   background: white;
   border-radius: 4px;
+}
+/* Ocultar las 3 líneas cuando el menú está abierto para no tapar la X */
+.side-menu.open ~ #menuToggle,
+body.menu-open #menuToggle {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .side-menu {
@@ -86,9 +97,25 @@ body {
 }
 .side-menu.open { transform: translateX(0); }
 .side-menu .menu-close {
-  background: transparent; border: none; font-size: 22px; float: right; cursor: pointer;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(90,70,40,0.08);
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dark);
+  transition: background 0.18s;
+  float: none;
 }
-.side-menu .menu-title { font-size: 20px; font-weight: 700; color: var(--text-dark); margin: 12px 0 18px; }
+.side-menu .menu-close:hover { background: rgba(224,90,74,0.15); color: var(--danger); }
+.side-menu .menu-title { font-size: 20px; font-weight: 700; color: var(--text-dark); margin: 52px 0 18px; }
 .side-menu .menu-item { display: block; padding: 12px 10px; color: var(--text-dark); text-decoration: none; border-radius: 10px; margin-bottom: 6px; }
 .side-menu .menu-item:hover { background: rgba(91,168,81,0.06); color: var(--secondary-dark); }
 
@@ -117,17 +144,24 @@ body {
 .recommendation-close { margin-left: auto; background: transparent; border: none; cursor: pointer; font-size: 18px; }
 
 .nav-content {
-  max-width: 1100px;
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
+}
+
+/* Grupo izquierdo: logo + badge usuario */
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
 .nav-logo {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   font-size: 28px;
   font-weight: 700;
   color: white;
@@ -136,20 +170,66 @@ body {
 .logo-icon { font-size: 38px; }
 .logo-text { letter-spacing: 0.5px; }
 
+/* Separador visual entre badge y logo */
+.nav-left .nav-user-badge {
+  border-right: 2px solid rgba(255,255,255,0.25);
+  padding-right: 20px;
+  border-left: none;
+  padding-left: 0;
+}
+
+/* Badge del usuario */
+.nav-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.14);
+  border: 1.5px solid rgba(255,255,255,0.28);
+  border-radius: 40px;
+  padding: 6px 16px 6px 8px;
+  backdrop-filter: blur(4px);
+}
+.user-badge-avatar {
+  font-size: 22px;
+  background: rgba(255,255,255,0.22);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.user-badge-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.user-badge-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.2px;
+}
+.user-badge-status {
+  font-size: 11px;
+  color: #a8ffae;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* Legado — mantener por si algo lo referencia */
 .nav-user {
   display: flex;
   align-items: center;
   gap: 20px;
 }
-
 .user-name {
   font-size: 17px;
   color: white;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.18);
-  padding: 8px 16px;
-  border-radius: 30px;
 }
+
 
 /* ═══════════════════════════════════════════════════════
    BOTONES
@@ -661,6 +741,7 @@ body {
   padding: 12px 16px 0;
   background: var(--card-bg);
 }
+
 .quick-chip {
   background: #F0EBE0;
   border: 2px solid var(--border);
@@ -805,7 +886,7 @@ body {
 
 @media (max-width: 768px) {
   body { font-size: 17px; }
-  .navbar { padding: 14px 18px; }
+  .navbar { padding: 14px 75px 14px 18px; } /* Evita colisión con el menú hamburguesa */
   .nav-logo { font-size: 23px; }
   .logo-icon { font-size: 32px; }
   .user-name { font-size: 14px; padding: 6px 12px; }
@@ -922,21 +1003,62 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════
-   CHIPS RÁPIDOS — scroll horizontal en móvil
+   CHIPS RÁPIDOS — wrapper con flechas de navegación
    ═══════════════════════════════════════════════════════ */
+.assistant-quick-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 10px 4px;
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+}
 .assistant-quick {
   display: flex;
   gap: 8px;
   flex-wrap: nowrap;
   overflow-x: auto;
-  padding: 10px 14px;
+  padding: 2px 0 6px;
   background: var(--card-bg);
   scrollbar-width: none;
   -ms-overflow-style: none;
+  scroll-behavior: smooth;
+  flex: 1;
 }
 .assistant-quick::-webkit-scrollbar { display: none; }
 /* Asegurar que los chips no se encojan */
 .quick-chip { flex-shrink: 0; }
+
+/* Botones de flecha para navegar chips */
+.quick-nav-btn {
+  background: var(--secondary);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(70, 138, 61, 0.3);
+  transition: all 0.18s;
+  padding: 0;
+}
+.quick-nav-btn:hover {
+  background: var(--secondary-dark);
+  box-shadow: 0 4px 12px rgba(70, 138, 61, 0.45);
+  transform: scale(1.1);
+}
+.quick-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  transform: none;
+}
 
 /* ═══════════════════════════════════════════════════════
    BOTÓN CÁMARA
