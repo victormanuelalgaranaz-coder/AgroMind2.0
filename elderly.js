@@ -664,8 +664,42 @@ function removeAttachedImage() {
   attachedImageMime   = 'image/jpeg';
   const previewArea = document.getElementById('imagePreviewArea');
   if (previewArea) previewArea.style.display = 'none';
-  const imgInput = document.getElementById('imageInput');
-  if (imgInput) imgInput.value = '';
+  const imgInputG = document.getElementById('imageInputGallery');
+  const imgInputC = document.getElementById('imageInputCamera');
+  if (imgInputG) imgInputG.value = '';
+  if (imgInputC) imgInputC.value = '';
+}
+// Detectar dispositivo móvil y ofrecer elegir cámara o galería
+function isMobileDevice() {
+  return /Mobi|Android|iPhone|iPad|iPod|Opera Mini/i.test(navigator.userAgent || '');
+}
+
+function openImageOptions(e) {
+  const gallery = document.getElementById('imageInputGallery');
+  const camera  = document.getElementById('imageInputCamera');
+  if (!gallery || !camera) return;
+  if (isMobileDevice()) {
+    // Mostrar modal con opciones cámara/galería
+    openModal('imageChoiceModal');
+  } else {
+    // En PC siempre abrir selector de archivos (galería/file picker)
+    gallery.removeAttribute('capture');
+    gallery.click();
+  }
+}
+
+function handleImageOption(choice) {
+  const gallery = document.getElementById('imageInputGallery');
+  const camera  = document.getElementById('imageInputCamera');
+  if (!gallery || !camera) return;
+  closeModal('imageChoiceModal');
+  setTimeout(() => {
+    if (choice === 'camera') {
+      camera.click();
+    } else {
+      gallery.click();
+    }
+  }, 120);
 }
 async function sendChatMessage() {
   const input    = document.getElementById('chatInput');
@@ -873,6 +907,14 @@ function openModal(id) {
     const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
     if (scrollBarWidth > 0) body.style.paddingRight = scrollBarWidth + 'px';
     body.classList.add('modal-open');
+    // Accessibility: manage focus
+    window.__lastFocusedElement = document.activeElement;
+    window.__currentOpenModalId = id;
+    // focus first focusable element inside modal
+    const focusable = modal.querySelector('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (focusable) focusable.focus();
+    // add keydown listener for Escape and Tab trapping
+    document.addEventListener('keydown', __modalKeyHandler);
   }
 }
 
@@ -882,6 +924,40 @@ function closeModal(id) {
     modal.style.display = 'none';
     document.body.classList.remove('modal-open');
     document.body.style.paddingRight = '';
+    // restore focus
+    try { if (window.__lastFocusedElement && typeof window.__lastFocusedElement.focus === 'function') window.__lastFocusedElement.focus(); } catch(e){}
+    // remove key handler
+    document.removeEventListener('keydown', __modalKeyHandler);
+    window.__currentOpenModalId = null;
+  }
+}
+
+function __modalKeyHandler(e) {
+  const id = window.__currentOpenModalId;
+  if (!id) return;
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closeModal(id);
+    return;
+  }
+  if (e.key === 'Tab') {
+    // focus trap
+    const focusable = Array.from(modal.querySelectorAll('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+      .filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault(); last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault(); first.focus();
+      }
+    }
   }
 }
 
