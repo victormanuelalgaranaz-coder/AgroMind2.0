@@ -884,6 +884,33 @@ body.menu-open #menuToggle {
 .modal-buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
 .modal-buttons .btn-large { margin-top: 0; }
 
+/* Mejoras responsivas para modales */
+@media (max-width: 700px) {
+  .modal {
+    padding: env(safe-area-inset, 12px);
+    align-items: flex-end;
+  }
+  .modal-content {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 14px 14px 0 0;
+    padding: 18px;
+    margin: 0;
+    max-height: 96vh;
+    box-shadow: 0 -6px 24px rgba(10,10,10,0.3);
+  }
+  .modal-content h2 { font-size: 20px; }
+  .modal-content .input-field { padding: 14px; font-size: 17px; }
+  .modal-buttons { gap: 12px; }
+  .modal-buttons .btn-large, .modal-buttons button { padding: 12px 14px; font-size: 16px; }
+  /* Hacer que el área de mensajes o el contenido se pueda desplazar adecuadamente */
+  .modal-content { -webkit-overflow-scrolling: touch; }
+}
+
+@media (min-width: 701px) and (max-width: 1100px) {
+  .modal-content { max-width: 640px; padding: 26px; }
+}
+
 /* ═══════════════════════════════════════════════════════
    LOGIN / REGISTRO
    ═══════════════════════════════════════════════════════ */
