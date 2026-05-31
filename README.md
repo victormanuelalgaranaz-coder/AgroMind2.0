@@ -6,7 +6,7 @@
                                   # HERBERT GONZALES LINARES           #
                                   # PABLO SALOMON MOLLA PEÑA           #
                                   # ELIAS JOAQUIN VIDAL VACA           #
-                                  #                                    #
+                                  # FRANCISCO SEGUNDO ORTIZ ROJAS      #
                                   # DAIRO TICONA MERIDA                #
                                   ######################################
                                   
