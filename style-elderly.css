@@ -54,12 +54,20 @@ body {
     /* 2. Ajustes para que se vea perfecta en toda la pantalla */
     background-size: cover;          /* Hace que la imagen cubra toda la pantalla sin dejar huecos */
     background-position: center;     /* Centra la imagen */
-    background-attachment: fixed;    /* Hace que el fondo se quede quieto cuando el usuario baja por la página */
+    background-attachment: scroll;   /* Evitar bugs y saltos en móviles; habilitado sólo en desktop más abajo */
     background-repeat: no-repeat;    /* Evita que la imagen se repita como un mosaico */
 
     /* (Mantén aquí cualquier otro estilo que ya tuvieras en tu body, como color de texto o tipo de letra) */
     font-family: 'Poppins', sans-serif;
     color: #ffffff;
+}
+
+/* Evitar scrollbar horizontal inesperado que desplaza elementos al abrir overlays */
+html, body { overflow-x: hidden; }
+
+/* Restaurar fondo fijo sólo en pantallas grandes (desktop) para evitar problemas en móvil */
+@media (min-width: 1024px) {
+  body { background-attachment: fixed; }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -171,6 +179,7 @@ body.menu-open #menuToggle {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 /* Grupo izquierdo: logo + badge usuario */
@@ -178,6 +187,7 @@ body.menu-open #menuToggle {
   display: flex;
   align-items: center;
   gap: 20px;
+  flex: 1 1 auto;
 }
 
 .nav-logo {
@@ -561,11 +571,19 @@ body.menu-open #menuToggle {
   border-radius: 16px;
   padding: 22px;
   box-shadow: 0 4px 12px rgba(91, 168, 81, 0.12);
+  overflow: hidden; /* Evita que elementos internos causen scroll horizontal */
 }
 .chart-box h3 { font-size: 19px; font-weight: 700; margin-bottom: 18px; color: var(--secondary); text-align: center; letter-spacing: 0.3px; }
 
 /* canvas necesita contenedor con altura definida */
-.canvas-wrapper { position: relative; height: 240px; width: 100%; }
+.canvas-wrapper { position: relative; width: 100%; height: auto; aspect-ratio: 16/6; min-height: 180px; }
+
+/* Forzar que el canvas se adapte al contenedor y no provoque overflow */
+.canvas-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
 
 /* ═══════════════════════════════════════════════════════
    ALERTAS DE PLAGAS
@@ -955,6 +973,30 @@ body.menu-open #menuToggle {
     height: 280px;
   }
 }
+
+/* Menú lateral full-width en móvil para evitar solapamientos */
+@media (max-width: 768px) {
+  .side-menu {
+    width: 100%;
+    right: 0;
+    padding: 18px;
+    border-radius: 0;
+    transform: translateX(100%);
+  }
+  .side-menu.open { transform: translateX(0); }
+  .side-menu .menu-close { right: 12px; }
+}
+
+/* Evitar shift de layout cuando ocultamos el scrollbar (modals/assistant) */
+body.modal-open,
+body.assistant-open {
+  overflow: hidden !important;
+}
+
+/* Optional visual: asegurar que cuando se bloquee el body no se pierda ancho visible
+   (JS añadirá inline padding-right igual al ancho del scrollbar) */
+/* Removed empty ruleset (was used as a placeholder for inline-scrollbar padding handling).
+  JS now applies inline style to `body.style.paddingRight` when needed, no CSS required here. */
 
 /* ═══════════════════════════════════════════════════════
    MÓVIL: OCULTAR NOMBRE + SALIR EN NAVBAR
@@ -1648,6 +1690,8 @@ body.menu-open #menuToggle {
 .online-counter:hover {
   background: rgba(255,255,255,0.25);
 }
+
+.online-counter { flex-shrink: 0; }
 
 .online-dot {
   width: 9px;
